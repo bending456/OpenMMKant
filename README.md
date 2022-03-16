@@ -51,6 +51,9 @@ $ rmsdseries start startNo endNo
 - "startNo": When there are series of simulations, it should be 1
 - "endNo": When there are series of simulations, it should be n+1 where n is the last number of the simulation series. 
 
+### Using pytraj 
+Please, check out [pytraj example in Colab](https://colab.research.google.com/drive/139l9ci_iIkFixgfZMWVRi85ALpE9HCx6?usp=sharing)
+
 ### Visulizing the data 
 Please, check out Analysis.ipynb. 
 As long as this script is being executed in Kant, it should properly load "experimental" data since paths are included. 
