@@ -24,6 +24,9 @@ import ruamel.yaml
 here=os.path.dirname(os.path.abspath(__file__))
 
 '''
+[Note]: 3/17/22 by Ben 
+Separating path width from the total box size. 
+
 [Note]: 3/6/22 by Ben 
 The motility of cells/particles are governed by the system temperature. 
 Things should be done. 
@@ -187,7 +190,7 @@ def simulator(ExtATP = 10,
         print('SLAB structure')
         boxFactor = 4
         pathFactor = boxFactor*2 #4
-        pathWFactor = boxFactor*0.6 #1.2
+        pathWFactor = 1 #boxFactor*0.6 #1.2
         wallFactor = boxFactor*3 #6
         shape_factor = boxFactor + pathFactor 
         Area1 = (UnitLength*boxFactor)**2

@@ -342,15 +342,21 @@ def genCellCoord3D(Density1,               # resting cells in first compartment
     
         '''
     ## Boundary Particles
+        centYpath = (maxYpath + minYpath)/2
+        
+        minYbox = centYpath - UnitL*wallFactor/2
+        maxYbox = centYpath + UnitL*wallFactor/2
+        
         In_p = int(Indentation*wallFactor/perLine)
-        Pa_p = int(UnitL*pathFactor/perLine)
-        Re_p = int(UnitL/perLine)
-        Re_p2 = int(UnitL*4/perLine)
-        Wa_p = int((maxYpath+Indentation*5)/perLine)
+        Pa_p = int((maxXpath - minXpath)/perLine)
+        Re_p = int((minYpath - minYbox)/perLine)
+        Re_p2 = int(maxXpath/(perLine*3))
+        Wa_p = int((maxYpath + minYpath)*2/perLine)
+        
     
-        #1
+        #1 - here
         numP_BC = 0
-        for n in np.linspace(minYpath-Indentation*(wallFactor-1),minYpath-perLine,In_p):
+        for n in np.linspace(minYbox,minYpath-perLine,Re_p):
             x = minXpath
             y = n
             numP_BC += 1 
@@ -364,14 +370,14 @@ def genCellCoord3D(Density1,               # resting cells in first compartment
             coord.append([x,y,0])
             totalmarker.append('BC')
         #3
-        for n in np.linspace(minYpath,minYpath-Indentation*(wallFactor-1)-UnitL+perLine,In_p+Re_p):
+        for n in np.linspace(minYpath,minYbox,Re_p):
             x = maxXpath
             y = n
             numP_BC += 1
             coord.append([x,y,0])
             totalmarker.append('BC')
-        #4
-        for n in np.linspace(maxYpath+(wallFactor-1)*Indentation,maxYpath+perLine,In_p):
+        #4 - here
+        for n in np.linspace(maxYbox,maxYpath+perLine,Re_p):
             x = minXpath
             y = n
             numP_BC += 1
@@ -385,7 +391,7 @@ def genCellCoord3D(Density1,               # resting cells in first compartment
             coord.append([x,y,0])
             totalmarker.append('BC')
         #6
-        for n in np.linspace(maxYpath,UnitL+maxYpath+(wallFactor-1)*Indentation-perLine,In_p+Re_p):
+        for n in np.linspace(maxYpath,maxYbox,Re_p):
             x = maxXpath
             y = n
             numP_BC += 1
@@ -394,21 +400,20 @@ def genCellCoord3D(Density1,               # resting cells in first compartment
         #7
         for n in np.linspace(0,minXpath-perLine,Re_p2):
             x = n
-            y = minYpath-Indentation*(wallFactor-1)
+            y = minYbox
             numP_BC += 1
             coord.append([x,y,0])
             totalmarker.append('BC')
         #8
         for n in np.linspace(0,minXpath-perLine,Re_p2):
             x = n
-            y = maxYpath+(wallFactor-1)*Indentation
+            y = maxYbox
             numP_BC += 1
             coord.append([x,y,0])
             totalmarker.append('BC')
     
         #9
-        #for n in np.linspace(-2*Indentation+perLine,(UnitL+Indentation)*2-perLine,Wa_p):
-        for n in np.linspace(-2*Indentation-perLine*1.5,maxYpath+(wallFactor-1)*Indentation-perLine*1.5,Wa_p):
+        for n in np.linspace(minYbox,maxYbox-perLine,Wa_p):
             x = 0
             y = n
             numP_BC += 1
