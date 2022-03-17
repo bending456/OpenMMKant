@@ -77,6 +77,7 @@ def simulator(ExtATP = 10,
               # dimension related 
               UnitLength = 50,
               Indentation = 10,
+              pathRatio = 1,
               # output related 
               pdbFileName = 'temp',             # generated PDB file name 
               dcdfilename = 'test_output2',     # generated DCD file name 
@@ -190,8 +191,8 @@ def simulator(ExtATP = 10,
         print('SLAB structure')
         boxFactor = 4
         pathFactor = boxFactor*2 #4
-        pathWFactor = 1 #boxFactor*0.6 #1.2
-        wallFactor = boxFactor*3 #6
+        pathWFactor = boxFactor*pathRatio #1.2
+        wallFactor = boxFactor*2 #6
         shape_factor = boxFactor + pathFactor 
         Area1 = (UnitLength*boxFactor)**2
         Area2 = (UnitLength*(pathFactor+0.5))*(UnitLength*pathWFactor-2*Indentation)
@@ -626,6 +627,7 @@ if __name__ == "__main__":
   # dimension related 
   UnitLength = 30
   Indentation = 5
+  pathRatio = 1
   # output related 
   pdbFileName = 'test1'             # generated PDB file name 
   dcdfilename = 'test1'     # generated DCD file name 
@@ -724,6 +726,9 @@ if __name__ == "__main__":
         
     if arg=='-simType':
         simType = sys.argv[i+1]
+    
+    if arg=='-pathRatio':
+        pathRatio = np.float(sys.argv[i+1])
         
 
 simulator(ExtATP = ExtATP,                    
@@ -740,6 +745,7 @@ simulator(ExtATP = ExtATP,
           # dimension related 
           UnitLength = UnitLength,
           Indentation = Indentation,
+          pathRatio = pathRatio,
           # output related 
           pdbFileName = pdbFileName,             # generated PDB file name 
           dcdfilename = dcdfilename,     # generated DCD file name 

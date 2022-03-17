@@ -344,8 +344,8 @@ def genCellCoord3D(Density1,               # resting cells in first compartment
     ## Boundary Particles
         centYpath = (maxYpath + minYpath)/2
         
-        minYbox = centYpath - UnitL*wallFactor/2
-        maxYbox = centYpath + UnitL*wallFactor/2
+        minYbox = centYpath - UnitL*wallFactor/3
+        maxYbox = centYpath + UnitL*wallFactor/3
         
         In_p = int(Indentation*wallFactor/perLine)
         Pa_p = int((maxXpath - minXpath)/perLine)
