@@ -79,11 +79,15 @@ def genCellCoord3D(Density1,               # resting cells in first compartment
         minY1 = bumper
         Area1 = maxX1*maxY1
     else:
-        maxX1 = UnitL*boxFactor - bumper 
+        centYpath = (maxYpath + minYpath)/2
+        minYbox = centYpath - UnitL*wallFactor/3
+        maxYbox = centYpath + UnitL*wallFactor/3
+        boxLength = maxYbox - minYbox
+        maxX1 = boxLength - bumper 
         minX1 = bumper  
-        maxY1 = UnitL*boxFactor - bumper + 2*Indentation
-        minY1 = bumper - 2*Indentation
-        Area1 = maxX1 * (maxY1 - minY1)
+        maxY1 = maxYbox - bumper
+        minY1 = minYbox + bumper
+        Area1 = maxX1 * boxLength
     
     # Path Dimension - this has been calculated previously
     [maxXpath, minXpath, maxYpath, minYpath] = resv_dim
@@ -350,8 +354,8 @@ def genCellCoord3D(Density1,               # resting cells in first compartment
         In_p = int(Indentation*wallFactor/perLine)
         Pa_p = int((maxXpath - minXpath)/perLine)
         Re_p = int((minYpath - minYbox)/perLine)
-        Re_p2 = int(maxXpath/(perLine*3))
-        Wa_p = int((maxYpath + minYpath)*2/perLine)
+        Re_p2 = int(maxXpath/(perLine*2))
+        Wa_p = int((maxYpath + minYpath)*1.5/perLine)
         
     
         #1 - here

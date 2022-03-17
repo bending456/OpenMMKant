@@ -190,7 +190,7 @@ def simulator(ExtATP = 10,
         # step 1: calculate the area size of simulation box 
         print('SLAB structure')
         boxFactor = 4
-        pathFactor = boxFactor*2 #4
+        pathFactor = boxFactor*4 #4
         pathWFactor = boxFactor*pathRatio #1.2
         wallFactor = boxFactor*2 #6
         shape_factor = boxFactor + pathFactor 
@@ -208,10 +208,10 @@ def simulator(ExtATP = 10,
         highBC = np.array([xdim[1],ydim[1],zdim[1]])
         
         # step 4: migration path dimension 
-        maxXpath = UnitLength*(boxFactor + pathFactor)
-        minXpath = UnitLength*(boxFactor)
         maxYpath = round((UnitLength*boxFactor)/2 + UnitLength*pathWFactor/2 - Indentation) # preferrably 10 
         minYpath = round((UnitLength*boxFactor)/2 - UnitLength*pathWFactor/2 + Indentation)
+        maxXpath = (maxYpath - minYpath) + UnitLength*pathFactor
+        minXpath = (maxYpath - minYpath) + UnitLength*boxFactor - Indentation
         resv_dim = [maxXpath, minXpath, maxYpath, minYpath]
         
         # step 5: assigning the origin of external signal 
