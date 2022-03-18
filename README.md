@@ -1,5 +1,5 @@
 # OpenMMKant 
-## Execution Guide 
+## Initialization  
 Add the following path to your .bashrc
 
 ```
@@ -13,6 +13,8 @@ export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:/usr/local/cuda-10.1/lib64::/h
 
 or source config.bash
 
+## Execution 
+Test case: 
 ```
 $ python3 operator.py
 ```
@@ -25,6 +27,14 @@ For the lengthy simulation,
 
 ```
 $ nohup python3 operator.py
+```
+
+Cases for final data (see notes below for additional instructions) 
+```
+# mutiple channel witdths 
+$ python3 operatorFinal.py -pathwidths 
+
+# open box sims 
 ```
 
 ## Analysis Guide 
