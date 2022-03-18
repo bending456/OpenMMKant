@@ -731,7 +731,8 @@ if __name__ == "__main__":
         pathRatio = np.float(sys.argv[i+1])
         
 
-simulator(ExtATP = ExtATP,                    
+    if arg=='-run':
+      simulator(ExtATP = ExtATP,                    
           cellConc = cellConc,                     
           # kinetics related 
           Diff = Diff,                       

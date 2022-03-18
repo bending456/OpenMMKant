@@ -44,7 +44,8 @@ for i in np.arange(repeat):
                   '-numOfDeadCell '+str(0)+' '+
                   '-stateVar '+'off'+' '+
                   '-pathRatio '+str(n)+' '+
-                  '-symType '+'slab') # either box or slab (anything other than box is slab structure)
+                  '-symType '+'slab'+' '+
+                  '-run') # either box or slab (anything other than box is slab structure)
         j += 1
  
 
