@@ -43,16 +43,7 @@ for i in np.arange(repeat):
                   '-input '+str(inputname)+' '+
                   '-numOfDeadCell '+str(0)+' '+
                   '-stateVar '+'off'+' '+
-<<<<<<< HEAD
                   '-pathRatio '+str(pathRatios)+' '+
                   '-simType '+Type+' '+
                   '-run') # either box or slab (anything other than box is slab structure)
         j += 1
-=======
-                  '-pathRatio '+str(n)+' '+
-                  '-symType '+'slab'+' '+
-                  '-run') # either box or slab (anything other than box is slab structure)
-        j += 1
- 
-
->>>>>>> 50fcf88ffcbf0820c8bd43436cc704fd1daa068e
