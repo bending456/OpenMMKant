@@ -1,5 +1,5 @@
 # OpenMMKant 
-## Execution Guide 
+## Initialization  
 Add the following path to your .bashrc
 
 ```
@@ -11,6 +11,10 @@ export PATH=/usr/local/cuda-10.1/bin:/usr/local/cuda-10.1/bin:/home/bchun/.local
 export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:/usr/local/cuda-10.1/lib64::/home/bchun/OpenMM/lib:/home/bchun/OpenMMpy2/lib:/home/bchun/OpenMM:/home/bchun/OpenMMpy2:/home/bchun/.openmpi/lib/:/home/bchun/.openmpi/lib/
 ```
 
+or source config.bash
+
+## Execution 
+Test case: 
 ```
 $ python3 operator.py
 ```
@@ -23,6 +27,14 @@ For the lengthy simulation,
 
 ```
 $ nohup python3 operator.py
+```
+
+Cases for final data (see notes below for additional instructions) 
+```
+# mutiple channel witdths 
+$ python3 operatorFinal.py -pathwidths 
+
+# open box sims 
 ```
 
 ## Analysis Guide 
@@ -53,6 +65,10 @@ $ rmsdseries start startNo endNo
 
 ### Using pytraj 
 Please, check out [pytraj example in Colab](https://colab.research.google.com/drive/139l9ci_iIkFixgfZMWVRi85ALpE9HCx6?usp=sharing)
+
+Note: doesn't seem to like something about config.bash (permissions)
+
+
 
 ### Visulizing the data 
 Please, check out Analysis.ipynb. 
