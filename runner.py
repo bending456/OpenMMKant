@@ -108,7 +108,7 @@ def simulator(ExtATP = 10,
     '''
     # common parameters 
     perLine = 5
-    min_dist_among_cells = 2.5
+    min_dist_among_cells = 1
     
     
     ## Box case 
@@ -308,9 +308,9 @@ def simulator(ExtATP = 10,
     RepulsiveScaleBorder = 0.75
 
     ### Simulation parameters
-    temperature = 15+50/(1+(500/ExtATP)**3) #0.0    # K   <---- set to 0 to get rid of wiggling for now
+    temperature = 10+25/(1+(500/ExtATP)**3) #0.0    # K   <---- set to 0 to get rid of wiggling for now
     frictionCoeff = frictionCoeff  # 1/ps
-    step_size = 0.001    # ps
+    step_size = 0.02     # 0.001 -> 1 second therefore, this is x20
     
     ##########################################################
     ###              OpenMM Simulation Control             ###
@@ -625,7 +625,7 @@ if __name__ == "__main__":
   numOfDeadCell = 0
   DCrepulsive = 0.85
   # dimension related 
-  UnitLength = 30
+  UnitLength = 50
   Indentation = 5
   pathRatio = 1
   # output related 

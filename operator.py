@@ -22,19 +22,19 @@ There should be two version of calculations
 
 simLength = 1000*1
 DiffState = 'steady'
-Density1 = 0.00075
+Density1 = 0.001
 Density2 = 0.0
-#ATP = [1e-14,500] # in uM
-pathRatios = [0.5,0.8,1]
-repeat = 1
-Type = 'slab' # or box
+ATP = [1e-14,500] # in uM
+pathRatios = 0.5
+repeat = 5
+Type = 'box' # or box
 
 j = 0
 for i in np.arange(repeat):
-    for n in pathRatios:
+    for n in ATP:
         inputname = 'test'+str(j+1)
         os.system('python3 runner.py -t '+str(simLength)+' '+
-                  '-ExtATP '+str(500)+' '+
+                  '-ExtATP '+str(n)+' '+
                   '-cellConc '+str(0)+' '+
                   '-Density1 '+str(Density1)+' '+
                   '-Density2 '+str(Density2)+' '+
@@ -43,8 +43,7 @@ for i in np.arange(repeat):
                   '-input '+str(inputname)+' '+
                   '-numOfDeadCell '+str(0)+' '+
                   '-stateVar '+'off'+' '+
-                  '-pathRatio '+str(n)+' '+
-                  '-symType '+'slab') # either box or slab (anything other than box is slab structure)
+                  '-pathRatio '+str(pathRatios)+' '+
+                  '-simType '+Type+' '+
+                  '-run') # either box or slab (anything other than box is slab structure)
         j += 1
- 
-
