@@ -1,9 +1,6 @@
 #####################################################################################
 # This is an example usage of the interface to feed forces into OpenMM with Python. #
 #####################################################################################
-#import sys
-
-#sys.path.append('../pyscript')
 
 from simtk.unit import *
 from simtk.openmm import *
@@ -19,13 +16,14 @@ import os
 import random
 import matplotlib.pyplot as plt
 import ruamel.yaml
-
+#import 
 
 here=os.path.dirname(os.path.abspath(__file__))
 
 '''
-[Note]: 3/17/22 by Ben 
-Separating path width from the total box size. 
+[Note]: 4/17/22 by Ben 
+Attempt to Consolidate Parameters - Too manys 
+1. Do it with Pandas or Yaml or class 
 
 [Note]: 3/6/22 by Ben 
 The motility of cells/particles are governed by the system temperature. 
@@ -108,7 +106,7 @@ def simulator(ExtATP = 10,
     '''
     # common parameters 
     perLine = 5
-    min_dist_among_cells = 1
+    min_dist_among_cells = 5
     
     
     ## Box case 
@@ -250,18 +248,18 @@ def simulator(ExtATP = 10,
     
     [initPosInNm, marker, MigMarker,
     totalmarker, Cell_Constitution] = calc.genCellCoord3D(Density1, # ii 
-                                                           Density2, # ii
-                                                           numOfDeadCell, # ii 
-                                                           num_BP, # si
-                                                           perLine, # ii 
-                                                           min_dist_among_cells, # ii
-                                                           resv_dim,
-                                                           boundary_dim,
-                                                           P2Y_resting, # ii
-                                                           P2Y_activated, # ii
-                                                           DiffState, # ii
-                                                           simType # ii 
-                                                           ) # change this to boolean
+                                                          Density2, # ii
+                                                          numOfDeadCell, # ii 
+                                                          num_BP, # si
+                                                          perLine, # ii 
+                                                          min_dist_among_cells, # ii
+                                                          resv_dim,
+                                                          boundary_dim,
+                                                          P2Y_resting, # ii
+                                                          P2Y_activated, # ii
+                                                          DiffState, # ii
+                                                          simType # ii 
+                                                          ) # change this to boolean
     
     
     DeadCellRef1 = Cell_Constitution['Dead']
@@ -303,14 +301,14 @@ def simulator(ExtATP = 10,
     MassOfDead = 1e14
     MassOfBorder = 1e14
 
-    RepulsiveScale = 0.8 # this can determine the distance among cells themselves
+    RepulsiveScale = 0.1 # this can determine the distance among cells themselves
     RepulsiveScaleDead = DCrepulsive #0.15 1.5 - 9A
     RepulsiveScaleBorder = 0.75
 
     ### Simulation parameters
     temperature = 10+25/(1+(500/ExtATP)**3) #0.0    # K   <---- set to 0 to get rid of wiggling for now
     frictionCoeff = frictionCoeff  # 1/ps
-    step_size = 0.02     # 0.001 -> 1 second therefore, this is x20
+    step_size = 0.01    # 0.001 -> 10 second therefore, 0.02 is x200
     
     ##########################################################
     ###              OpenMM Simulation Control             ###
@@ -431,7 +429,7 @@ def simulator(ExtATP = 10,
     positions = simulation.context.getState(getPositions=True).getPositions()
     
     print("|------ calibration initiated -----|")
-    for num_iter in range(1, 100): ### What is this? 
+    for num_iter in range(1, 100): ### 
         positions = simulation.context.getState(getPositions=True).getPositions()
         simulation.step(stepFreq)
         state = simulation.context.getState(getEnergy=True, getForces=True)
@@ -625,14 +623,14 @@ if __name__ == "__main__":
   numOfDeadCell = 0
   DCrepulsive = 0.85
   # dimension related 
-  UnitLength = 50
+  UnitLength = 30
   Indentation = 5
   pathRatio = 1
   # output related 
   pdbFileName = 'test1'             # generated PDB file name 
   dcdfilename = 'test1'     # generated DCD file name 
   simLength = 50000                # a total number of the simulation steps 
-  dumpSize = 1                   # dump size in the dcd generation process 
+  dumpSize = 100                   # dump size in the dcd generation process 
               
   # simulation Mode              
   stateVar = 'off'
@@ -645,7 +643,7 @@ if __name__ == "__main__":
   P2Y_resting = 1
   P2Y_activated = 0.001
   frictionCoeff = 0.85
-  simType = 'slab'
+  simType = 'box'
 
 
 
@@ -731,8 +729,7 @@ if __name__ == "__main__":
         pathRatio = np.float(sys.argv[i+1])
         
 
-    if arg=='-run':
-      simulator(ExtATP = ExtATP,                    
+simulator(ExtATP = ExtATP,                    
           cellConc = cellConc,                     
           # kinetics related 
           Diff = Diff,                       
