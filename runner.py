@@ -642,7 +642,9 @@ if __name__ == "__main__":
   P2X_activated = 5
   P2Y_resting = 1
   P2Y_activated = 0.001
-  frictionCoeff = 0.85
+  frictionCoeff = 0.25
+  frictionCoeff = 0.20
+  #frictionCoeff = 0.15
   simType = 'box'
 
 
@@ -729,6 +731,7 @@ if __name__ == "__main__":
         pathRatio = np.float(sys.argv[i+1])
         
 
+print(frictionCoeff)
 simulator(ExtATP = ExtATP,                    
           cellConc = cellConc,                     
           # kinetics related 

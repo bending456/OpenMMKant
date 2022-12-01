@@ -1,5 +1,7 @@
 # OpenMMKant 
 ## Initialization  
+For now, this needs to be run from Kant
+
 Add the following path to your .bashrc
 
 ```

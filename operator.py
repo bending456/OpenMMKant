@@ -20,14 +20,16 @@ There should be two version of calculations
 ###############################################
 ## Structure 
 
-simLength = 1000*1
+simLength = 500000*1
 DiffState = 'steady'
 Density1 = 0.001
 Density2 = 0.0
 ATP = [1e-14,500] # in uM
+ATP = [1e-14]                  
 pathRatios = 0.5
-repeat = 5
+repeat = 1
 Type = 'box' # or box
+Type = 'slab' # or box
 
 j = 0
 for i in np.arange(repeat):
