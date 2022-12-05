@@ -6,12 +6,15 @@ since OpenMM needs to work in 3D. This isn't really a big deal, except
 that it affects the meaning of the temperature and kinetic energy. So
 take the meaning of those numbers with a grain of salt.
 """
+
 from simtk.unit import kelvin, picosecond, femtosecond, nanometer, dalton
 import simtk.openmm as mm
 
-import matplotlib.pyplot as pp
+import matplotlib.pylab as plt
 import numpy as np
+from sklearn.linear_model import LinearRegression
 
+# TODO: adj. shape of the potential 
 class MullerForce(mm.CustomExternalForce):
     """OpenMM custom force for propagation on the Muller Potential. Also
     includes pure python evaluation of the potential energy surface so that
@@ -26,6 +29,7 @@ class MullerForce(mm.CustomExternalForce):
     def __init__(self):
         # start with a harmonic restraint on the Z coordinate
         expression = '1000.0 * z^2'
+        # TODO - do not add x, y terms for expression 
         for j in range(4):
             # add the muller terms for the X and Y
             fmt = dict(aa=self.aa[j], bb=self.bb[j], cc=self.cc[j], AA=self.AA[j], XX=self.XX[j], YY=self.YY[j])
@@ -52,44 +56,184 @@ class MullerForce(mm.CustomExternalForce):
         # clip off any values greater than 200, since they mess up
         # the color scheme
         if ax is None:
-            ax = pp
+            ax = plt
         ax.contourf(xx, yy, V.clip(max=200), 40, **kwargs)
 
 
 ##############################################################################
 # Global parameters
 ##############################################################################
+def runBD(
+  # each particle is totally independent, propagating under the same potential
+  nParticles = 100, 
+  mass = 1.0 * dalton,
+  temperature = 750 * kelvin,
+  friction = 100 / picosecond,   # ps= 1000 fs --> 
+  timestep = 10.0 * femtosecond,# 1e-11 s --> * 100 --> 1e-9 [ns] 
+                                #    72 s --> &*100 --> 7200 [s] (2hrs)     
+  display=False
+  ): 
+  friction/=0.0765 # rescaling to match exptl data PKH 
 
-# each particle is totally independent, propagating under the same potential
-nParticles = 100
-mass = 1.0 * dalton
-temperature = 750 * kelvin
-friction = 100 / picosecond
-timestep = 10.0 * femtosecond
+  # Choose starting conformations uniform on the grid between (-1.5, -0.2) and (1.2, 2)
+  # domain unuts [nm?] --> [mm] (1e9) 
+  # TODO: define size of domain 
+  # 1600 um  x 1600 um <--> 1.6 mm 
+  startingPositions = (np.random.rand(nParticles, 3) * np.array([2.7, 1.8, 1])) + np.array([-1.5, -0.2, 0])
+  ###############################################################################
+  
+  
+  system = mm.System()
 
-# Choose starting conformations uniform on the grid between (-1.5, -0.2) and (1.2, 2)
-startingPositions = (np.random.rand(nParticles, 3) * np.array([2.7, 1.8, 1])) + np.array([-1.5, -0.2, 0])
-###############################################################################
 
-system = mm.System()
-mullerforce = MullerForce()
-for i in range(nParticles):
-    system.addParticle(mass)
-    mullerforce.addParticle(i, [])
-system.addForce(mullerforce)
+  # define force acting on particle 
+  mullerforce = MullerForce()
+  for i in range(nParticles):
+      system.addParticle(mass)
+      mullerforce.addParticle(i, [])
+  
+  addForce = False
+  #addForce = True    
+  if addForce:
+    system.addForce(mullerforce)
+  
+  #integrator = mm.LangevinIntegrator(temperature, friction, timestep)
+  integrator = mm.BrownianIntegrator(temperature, friction, timestep)
+  context = mm.Context(system, integrator)
+  
+  context.setPositions(startingPositions)
+  context.setVelocitiesToTemperature(temperature)
+  
+  if display:
+    MullerForce.plot(ax=plt.gca())
+  
+  
+  nInteg = 100
+  nUpdates = 10
+  nUpdates = 1000
+  xPos = np.reshape( np.zeros(2*nUpdates),[nUpdates,2]) # 
+  
+  min_per_hour = 60  #
+  ts = np.arange(nUpdates)/float(nUpdates) * 2*min_per_hour 
+  msds = np.zeros( nUpdates ) 
+  x0s = context.getState(getPositions=True).getPositions(asNumpy=True).value_in_unit(nanometer)
+  for i in range(nUpdates): 
+      # get positions at ith cycle 
+      x = context.getState(getPositions=True).getPositions(asNumpy=True).value_in_unit(nanometer)
+  
+      # get 1 particle's positions 
+      xEnd= x[-1,0:2]   
+      xPos[i,:] = xEnd 
+      
+      # get msd for each particle 
+      xmsd = x[:,0] - x0s[:,0]
+      ymsd = x[:,1] - x0s[:,1]
+      sd = xmsd*xmsd + ymsd*ymsd
+      msd = np.mean(sd) 
+      msds[i] = msd 
+  
+  
+      # plot 
+      if display: 
+        plt.scatter(x[:,0], x[:,1], edgecolor='none', facecolor='k')
+  
+      
+      
+      # integrate 
+      integrator.step(nInteg) # 100 fs <-->  
+  
+     
+  # should move these
+  data = np.loadtxt("/Users/huskeypm/Downloads/trajectories.csv",delimiter=",")
+  # show trajectory 
+  display = False   
+  #display = True    
+  if display: 
+    plt.plot(xPos[:,0], xPos[:,1])
+    plt.show()
+  
+  
+  # display rmsd
+  display = False 
+  display = True    
+  if display:
+    plt.plot(ts/min_per_hour,msds,label="Sim")
+    plt.xlabel("t [hr]") 
+    plt.ylabel("MSD [um**2]") 
 
-integrator = mm.LangevinIntegrator(temperature, friction, timestep)
-context = mm.Context(system, integrator)
+    adjTime = 2/50. # not sure why 50 entries, assuming 2 hrs 
+    texp = data[:,0]*adjTime
+    msdexp=data[:,1]
+    texp_=texp.reshape((-1, 1))
+    model = LinearRegression().fit(texp_,msdexp)
+    msdfit= model.intercept_ + texp*model.coef_
+    plt.plot(texp,msdexp, label="exp")
+    plt.plot(texp,msdfit, label="fit")
+    plt.legend(loc=0)
+  
+    # 1K ts --> 2hrs/7200s?  
+    # 200 [um**2 ] 
+    plt.show()
 
-context.setPositions(startingPositions)
-context.setVelocitiesToTemperature(temperature)
+#!/usr/bin/env python
+import sys
 
-MullerForce.plot(ax=pp.gca())
 
-for i in range(1000):
-    x = context.getState(getPositions=True).getPositions(asNumpy=True).value_in_unit(nanometer)
-    pp.scatter(x[:,0], x[:,1], edgecolor='none', facecolor='k')
-    integrator.step(100)
+#
+# Message printed when program run without arguments 
+#
+def helpmsg():
+  scriptName= sys.argv[0]
+  msg="""
+Purpose: 
+ 
+Usage:
+"""
+  msg+="  %s -validation" % (scriptName)
+  msg+="""
+  
+ 
+Notes:
 
-pp.show()
+"""
+  return msg
+
+#
+# MAIN routine executed when launching this script from command line 
+#
+if __name__ == "__main__":
+  import sys
+  msg = helpmsg()
+  remap = "none"
+
+  if len(sys.argv) < 2:
+      raise RuntimeError(msg)
+
+  #fileIn= sys.argv[1]
+  #if(len(sys.argv)==3):
+  #  1
+  #  #print "arg"
+
+  friction = 1/picosecond
+  # Loops over each argument in the command line 
+  for i,arg in enumerate(sys.argv):
+    # calls 'doit' with the next argument following the argument '-validation'
+    if(arg=="-validation"):
+      #arg1=sys.argv[i+1] 
+     
+      runBD(friction=friction)        
+      quit()
+    if(arg=="-test"):
+      test()
+      quit()
+  
+
+
+
+
+
+  raise RuntimeError("Arguments not understood")
+
+
+
 
