@@ -15,6 +15,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 
 # TODO: adj. shape of the potential 
+# https://demonstrations.wolfram.com/TrajectoriesOnTheMullerBrownPotentialEnergySurface/#more
 class MullerForce(mm.CustomExternalForce):
     """OpenMM custom force for propagation on the Muller Potential. Also
     includes pure python evaluation of the potential energy surface so that
@@ -71,6 +72,8 @@ def runBD(
   friction = 100 / picosecond,   # ps= 1000 fs --> 
   timestep = 10.0 * femtosecond,# 1e-11 s --> * 100 --> 1e-9 [ns] 
                                 #    72 s --> &*100 --> 7200 [s] (2hrs)     
+  addForce=False,
+  store=None,
   display=False
   ): 
   friction/=0.0765 # rescaling to match exptl data PKH 
@@ -92,9 +95,8 @@ def runBD(
       system.addParticle(mass)
       mullerforce.addParticle(i, [])
   
-  addForce = False
-  #addForce = True    
   if addForce:
+    print("Adding force") 
     system.addForce(mullerforce)
   
   #integrator = mm.LangevinIntegrator(temperature, friction, timestep)
@@ -141,8 +143,18 @@ def runBD(
       
       # integrate 
       integrator.step(nInteg) # 100 fs <-->  
+
+  if display:
+      plt.show()
+
+  if store is not None:
+      np.savetxt("traj.csv",xPos,delimiter=",")
+      np.savetxt("msd.csv",xPos,delimiter=",")
   
+  return 
+
      
+def PlotStuff():     
   # should move these
   #data = np.loadtxt("/Users/huskeypm/Downloads/trajectories.csv",delimiter=",")
   data = np.loadtxt("trajectories.csv",delimiter=",")
@@ -174,7 +186,8 @@ def runBD(
   
     # 1K ts --> 2hrs/7200s?  
     # 200 [um**2 ] 
-    plt.show()
+    #plt.show()
+    plt.gca().savefig("compare.png") 
 
 #!/usr/bin/env python
 import sys
@@ -216,13 +229,19 @@ if __name__ == "__main__":
   #  #print "arg"
 
   friction = 1/picosecond
+  display=False 
+  addForce=False 
   # Loops over each argument in the command line 
   for i,arg in enumerate(sys.argv):
     # calls 'doit' with the next argument following the argument '-validation'
+    if(arg=="-display"):
+      display=True
+    if(arg=="-addForce"):
+      addForce=True
     if(arg=="-validation"):
       #arg1=sys.argv[i+1] 
      
-      runBD(friction=friction)        
+      runBD(friction=friction,display=display,addForce=addForce,store=1)          
       quit()
     if(arg=="-test"):
       test()
