@@ -144,7 +144,8 @@ def runBD(
   
      
   # should move these
-  data = np.loadtxt("/Users/huskeypm/Downloads/trajectories.csv",delimiter=",")
+  #data = np.loadtxt("/Users/huskeypm/Downloads/trajectories.csv",delimiter=",")
+  data = np.loadtxt("trajectories.csv",delimiter=",")
   # show trajectory 
   display = False   
   #display = True    
