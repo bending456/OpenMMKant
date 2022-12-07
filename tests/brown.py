@@ -8,7 +8,8 @@ take the meaning of those numbers with a grain of salt.
 """
 
 from simtk.unit import kelvin, picosecond, femtosecond, nanometer, dalton
-import simtk.openmm as mm
+#import simtk.openmm as mm
+import openmm as mm
 
 import matplotlib.pylab as plt
 import numpy as np
@@ -16,6 +17,55 @@ from sklearn.linear_model import LinearRegression
 
 # TODO: adj. shape of the potential 
 # https://demonstrations.wolfram.com/TrajectoriesOnTheMullerBrownPotentialEnergySurface/#more
+class CustomForce(mm.CustomExternalForce):
+    """OpenMM custom force for propagation on the Muller Potential. Also
+    includes pure python evaluation of the potential energy surface so that
+    you can do some plotting"""
+    aa = [10]
+    bb = [100]
+    XX = [-10] 
+    YY = [1]
+
+    def __init__(self):
+        # start with a harmonic restraint on the Z coordinate
+        expression = '1000.0 * z^2'
+
+        for j in range(1):
+            # add the muller terms for the X and Y
+            fmt = dict(aa=self.aa[j], XX=self.XX[j], bb=self.bb[j], YY=self.YY[j])
+            # y parabola 
+            expression += '''+ {bb} * (y - {YY})^4'''.format(**fmt)
+            # x gradient 
+            #expression += '''+ {aa} * x + {XX}'''.format(**fmt)
+                               
+        super(CustomForce, self).__init__(expression)
+
+    @classmethod
+    # must match 'init' def. above 
+    def potential(cls, x, y):
+        "Compute the potential at a given point x,y"
+        value = 0
+        for j in range(1):
+            # y parabola
+            value += cls.bb[j] * (y - cls.YY[j])**4
+            # x gradient
+            #value += cls.aa[j] * x + cls.XX[j]
+                
+        return value
+
+    @classmethod
+    def plot(cls, ax=None, minx=-1.5, maxx=1.2, miny=0.0, maxy=2, **kwargs):
+        "Plot the potential"
+        grid_width = max(maxx-minx, maxy-miny) / 200.0
+        ax = kwargs.pop('ax', None)
+        xx, yy = np.mgrid[minx : maxx : grid_width, miny : maxy : grid_width]
+        V = cls.potential(xx, yy)
+        # clip off any values greater than 200, since they mess up
+        # the color scheme
+        if ax is None:
+            ax = plt
+        ax.contourf(xx, yy, V.clip(max=200), 40, **kwargs)
+
 class MullerForce(mm.CustomExternalForce):
     """OpenMM custom force for propagation on the Muller Potential. Also
     includes pure python evaluation of the potential energy surface so that
@@ -30,6 +80,7 @@ class MullerForce(mm.CustomExternalForce):
     def __init__(self):
         # start with a harmonic restraint on the Z coordinate
         expression = '1000.0 * z^2'
+
         # TODO - do not add x, y terms for expression 
         for j in range(4):
             # add the muller terms for the X and Y
@@ -64,6 +115,13 @@ class MullerForce(mm.CustomExternalForce):
 ##############################################################################
 # Global parameters
 ##############################################################################
+
+class Params():
+  def __init__(self):
+    self.friction = ( 100 / picosecond ) / 0.0765 # rescaling to match exptl data PKH  
+
+params = Params()
+
 def runBD(
   # each particle is totally independent, propagating under the same potential
   nParticles = 100, 
@@ -72,17 +130,23 @@ def runBD(
   friction = 100 / picosecond,   # ps= 1000 fs --> 
   timestep = 10.0 * femtosecond,# 1e-11 s --> * 100 --> 1e-9 [ns] 
                                 #    72 s --> &*100 --> 7200 [s] (2hrs)     
+  nInteg = 100,  # integration step per cycle
+  nUpdates = 1000,  # number of cycldes 
   addForce=False,
-  store=None,
+  saveTraj=None,
   display=False
   ): 
-  friction/=0.0765 # rescaling to match exptl data PKH 
+  friction = params.friction  
 
   # Choose starting conformations uniform on the grid between (-1.5, -0.2) and (1.2, 2)
   # domain unuts [nm?] --> [mm] (1e9) 
   # TODO: define size of domain 
   # 1600 um  x 1600 um <--> 1.6 mm 
-  startingPositions = (np.random.rand(nParticles, 3) * np.array([2.7, 1.8, 1])) + np.array([-1.5, -0.2, 0])
+  # for mueller potential 
+  #startingPositions = (np.random.rand(nParticles, 3) * np.array([2.7, 1.8, 1])) + np.array([-1.5, -0.2, 0])
+  startingPositions = (np.random.rand(nParticles, 3) * np.array([0.25,1,1]) + np.array([1,0,0]))  #
+  #)startingPositions[:,1] = 2.
+  startingPositions[:,2] = 0.
   ###############################################################################
   
   
@@ -90,14 +154,15 @@ def runBD(
 
 
   # define force acting on particle 
-  mullerforce = MullerForce()
+  customforce = CustomForce()
   for i in range(nParticles):
       system.addParticle(mass)
-      mullerforce.addParticle(i, [])
+      customforce.addParticle(i, [])
   
   if addForce:
     print("Adding force") 
-    system.addForce(mullerforce)
+    system.addForce(customforce)
+
   
   #integrator = mm.LangevinIntegrator(temperature, friction, timestep)
   integrator = mm.BrownianIntegrator(temperature, friction, timestep)
@@ -107,16 +172,14 @@ def runBD(
   context.setVelocitiesToTemperature(temperature)
   
   if display:
-    MullerForce.plot(ax=plt.gca())
+    CustomForce.plot(ax=plt.gca())
   
-  
-  nInteg = 100
-  nUpdates = 10
-  nUpdates = 1000
-  xPos = np.reshape( np.zeros(2*nUpdates),[nUpdates,2]) # 
   
   min_per_hour = 60  #
   ts = np.arange(nUpdates)/float(nUpdates) * 2*min_per_hour 
+  xs = np.reshape( np.zeros( nParticles*nUpdates ), [nParticles,nUpdates])
+  ys = np.zeros_like(xs)
+  
   msds = np.zeros( nUpdates ) 
   x0s = context.getState(getPositions=True).getPositions(asNumpy=True).value_in_unit(nanometer)
   for i in range(nUpdates): 
@@ -124,15 +187,16 @@ def runBD(
       x = context.getState(getPositions=True).getPositions(asNumpy=True).value_in_unit(nanometer)
   
       # get 1 particle's positions 
-      xEnd= x[-1,0:2]   
-      xPos[i,:] = xEnd 
+      #xs[:,i] = x[:,0]
+      #ys[:,i] = x[:,1]
       
       # get msd for each particle 
-      xmsd = x[:,0] - x0s[:,0]
-      ymsd = x[:,1] - x0s[:,1]
-      sd = xmsd*xmsd + ymsd*ymsd
-      msd = np.mean(sd) 
-      msds[i] = msd 
+      # TODO remove this 
+      #xmsd = x[:,0] - x0s[:,0]
+      #ymsd = x[:,1] - x0s[:,1]
+      #sd = xmsd*xmsd + ymsd*ymsd
+      #msd = np.mean(sd) 
+      #msds[i] = msd 
   
   
       # plot 
@@ -147,13 +211,13 @@ def runBD(
   if display:
       plt.show()
 
-  if store is not None:
-      np.savetxt("traj.csv",xPos,delimiter=",")
-      np.savetxt("msd.csv",xPos,delimiter=",")
+  if saveTraj is not None:
+      np.savetxt("traj.csv",x,delimiter=",")
   
-  return 
+  return ts,xs, ys 
 
      
+# pull more of this into notebook 
 def PlotStuff():     
   # should move these
   #data = np.loadtxt("/Users/huskeypm/Downloads/trajectories.csv",delimiter=",")
@@ -244,7 +308,7 @@ if __name__ == "__main__":
     if(arg=="-validation"):
       #arg1=sys.argv[i+1] 
      
-      runBD(friction=friction,display=display,addForce=addForce,store=1)          
+      runBD(friction=friction,display=display,addForce=addForce,saveTraj=1)          
       quit()
     if(arg=="-test"):
       test()
