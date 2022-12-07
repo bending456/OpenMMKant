@@ -175,6 +175,9 @@ def runBD(
     # 200 [um**2 ] 
     plt.show()
 
+def test():
+  1
+
 #!/usr/bin/env python
 import sys
 
