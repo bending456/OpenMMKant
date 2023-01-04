@@ -136,8 +136,12 @@ def runBD(
   nUpdates = 1000,  # number of cycldes 
   addForce=False,
   saveTraj=None,
+  trajOutName=None,
   display=False
   ): 
+  if saveTraj is not None:
+    raise RuntimeError("saveTraj is antiquated; use trajOutName instead") 
+
   friction = params.friction  
 
   # Choose starting conformations uniform on the grid between (-1.5, -0.2) and (1.2, 2)
@@ -213,17 +217,29 @@ def runBD(
   if display:
       plt.show()
 
-  if saveTraj is not None:
-      np.savetxt("traj.csv",x,delimiter=",")
+  # package data 
+  ar = [ts,xs,ys]
+  import pickle as pkl
+  if trajOutName is not None:
+    if "csv" not in trajOutName:
+      trajOutName+=".pkl"
+    file = open(trajOutName, 'wb') 
+    pkl.dump(ar,file)        
+    file.close()
   
   return ts,xs, ys 
 
      
 # pull more of this into notebook 
-def PlotStuff():     
+# PKH REMOVE THIS FUNCTION? 
+def PlotStuff(
+    
+  ):     
+  raise RuntimeError("depprecated") 
   # should move these
   #data = np.loadtxt("/Users/huskeypm/Downloads/trajectories.csv",delimiter=",")
   data = np.loadtxt("trajectories.csv",delimiter=",")
+
   # show trajectory 
   display = False   
   #display = True    
@@ -255,8 +271,6 @@ def PlotStuff():
     #plt.show()
     plt.gca().savefig("compare.png") 
 
-def test():
-  1
 
 #!/usr/bin/env python
 import sys
@@ -298,6 +312,7 @@ if __name__ == "__main__":
   #  #print "arg"
 
   friction = 1/picosecond
+  trajOutName = None 
   display=False 
   addForce=False 
   # Loops over each argument in the command line 
@@ -307,13 +322,15 @@ if __name__ == "__main__":
       display=True
     if(arg=="-addForce"):
       addForce=True
+    if(arg=="-trajOutName"):
+      trajOutName = sys.argv[i+1]
+
     if(arg=="-validation"):
       #arg1=sys.argv[i+1] 
-     
-      runBD(friction=friction,display=display,addForce=addForce,saveTraj=1)          
+      runBD(friction=friction,display=display,addForce=addForce,trajOutName=trajOutName)
       quit()
     if(arg=="-test"):
-      test()
+      runBD(friction=friction,display=display,addForce=addForce,trajOutName=trajOutName, nParticles = 10)
       quit()
   
 
