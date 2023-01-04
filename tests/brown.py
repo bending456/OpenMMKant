@@ -54,7 +54,7 @@ class CustomForce(mm.CustomExternalForce):
         return value
 
     @classmethod
-    def plot(cls, ax=None, minx=-1.5, maxx=1.2, miny=0.0, maxy=2, **kwargs):
+    def plot(cls, ax=None, minx=-1.5, maxx=3.0, miny=0.0, maxy=2, **kwargs):
         "Plot the potential"
         grid_width = max(maxx-minx, maxy-miny) / 200.0
         ax = kwargs.pop('ax', None)
@@ -186,9 +186,9 @@ def runBD(
       # get positions at ith cycle 
       x = context.getState(getPositions=True).getPositions(asNumpy=True).value_in_unit(nanometer)
   
-      # get 1 particle's positions 
-      #xs[:,i] = x[:,0]
-      #ys[:,i] = x[:,1]
+      # get particle's positions 
+      xs[:,i] = x[:,0]
+      ys[:,i] = x[:,1]
       
       # get msd for each particle 
       # TODO remove this 
