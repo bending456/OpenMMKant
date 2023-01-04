@@ -315,6 +315,7 @@ if __name__ == "__main__":
   trajOutName = None 
   display=False 
   addForce=False 
+  numParticles = 100 
   # Loops over each argument in the command line 
   for i,arg in enumerate(sys.argv):
     # calls 'doit' with the next argument following the argument '-validation'
@@ -322,6 +323,8 @@ if __name__ == "__main__":
       display=True
     if(arg=="-addForce"):
       addForce=True
+    if(arg=="-numParticles"):
+      numParticles = int(sys.argv[i+1]) 
     if(arg=="-trajOutName"):
       trajOutName = sys.argv[i+1]
 
@@ -330,7 +333,7 @@ if __name__ == "__main__":
       runBD(friction=friction,display=display,addForce=addForce,trajOutName=trajOutName)
       quit()
     if(arg=="-test"):
-      runBD(friction=friction,display=display,addForce=addForce,trajOutName=trajOutName, nParticles = 10)
+      runBD(friction=friction,display=display,addForce=addForce,trajOutName=trajOutName, nParticles = numParticles) 
       quit()
   
 
