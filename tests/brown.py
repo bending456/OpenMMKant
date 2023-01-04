@@ -8,8 +8,10 @@ take the meaning of those numbers with a grain of salt.
 """
 
 from simtk.unit import kelvin, picosecond, femtosecond, nanometer, dalton
-#import simtk.openmm as mm
-import openmm as mm
+# if kant installastion
+import simtk.openmm as mm
+# otherwise 
+#import openmm as mm
 
 import matplotlib.pylab as plt
 import numpy as np

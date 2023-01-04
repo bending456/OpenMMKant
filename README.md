@@ -1,8 +1,13 @@
 # OpenMMKant 
-## Initialization  
 For now, this needs to be run from Kant
 
-Add the following path to your .bashrc
+## Installation
+- Open a terminal window (on kant) 
+git clone https://github.com/bending456/OpenMMKant
+
+
+## Initialization  
+-Add/revise a file call config.bash to your directory and paste the following commands
 
 ```
 export GOPATH=${HOME}/go
@@ -13,9 +18,18 @@ export PATH=/usr/local/cuda-10.1/bin:/usr/local/cuda-10.1/bin:/home/bchun/.local
 export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:/usr/local/cuda-10.1/lib64::/home/bchun/OpenMM/lib:/home/bchun/OpenMMpy2/lib:/home/bchun/OpenMM:/home/bchun/OpenMMpy2:/home/bchun/.openmpi/lib/:/home/bchun/.openmpi/lib/
 ```
 
-or source config.bash
+- add config.bash to your source 
+source config.bash
+
+## Test installation 
+python3 -c "import simtk"
 
 ## Execution 
+python3 tests/brown.py
+Note: some of our installations are old, so you make have to import simtk.openmm instead of just openmm. If so, edit tests/brown.py accordingly
+
+
+## Other examples 
 Test case: 
 ```
 $ python3 operator.py
