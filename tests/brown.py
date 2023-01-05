@@ -17,6 +17,8 @@ import matplotlib.pylab as plt
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
+min_per_hour = 60  #
+
 # TODO: adj. shape of the potential 
 # https://demonstrations.wolfram.com/TrajectoriesOnTheMullerBrownPotentialEnergySurface/#more
 class CustomForce(mm.CustomExternalForce):
@@ -28,30 +30,44 @@ class CustomForce(mm.CustomExternalForce):
     XX = [-10] 
     YY = [1]
 
-    def __init__(self):
+    def __init__(self,
+        yPotential = True,  # confines particles within a region of the y-axis 
+        xPotential = False  # defines a gradient along the x-axis (will be basis of chemotactic gradient) 
+        ):
+
+        self.yPotential = yPotential
+        self.xPotential = xPotential
+
         # start with a harmonic restraint on the Z coordinate
         expression = '1000.0 * z^2'
 
+	# PKH: this range isnt necessary - remove 
+        # any changes here must be made in potential() below too 
         for j in range(1):
             # add the muller terms for the X and Y
             fmt = dict(aa=self.aa[j], XX=self.XX[j], bb=self.bb[j], YY=self.YY[j])
             # y parabola 
-            expression += '''+ {bb} * (y - {YY})^4'''.format(**fmt)
+            if self.yPotential:
+              expression += '''+ {bb} * (y - {YY})^4'''.format(**fmt)
             # x gradient 
-            #expression += '''+ {aa} * x + {XX}'''.format(**fmt)
+            if self.xPotential:
+              expression += '''+ {aa} * x + {XX}'''.format(**fmt)
                                
         super(CustomForce, self).__init__(expression)
 
     @classmethod
     # must match 'init' def. above 
+    # only used for plotting, so ignores z-direction 
     def potential(cls, x, y):
         "Compute the potential at a given point x,y"
         value = 0
         for j in range(1):
             # y parabola
-            value += cls.bb[j] * (y - cls.YY[j])**4
+            if self.yPotential:
+              value += cls.bb[j] * (y - cls.YY[j])**4
             # x gradient
-            #value += cls.aa[j] * x + cls.XX[j]
+            if self.xPotential:
+              value += cls.aa[j] * x + cls.XX[j]
                 
         return value
 
@@ -68,6 +84,7 @@ class CustomForce(mm.CustomExternalForce):
             ax = plt
         ax.contourf(xx, yy, V.clip(max=200), 40, **kwargs)
 
+# PKH remove the muller potential 
 class MullerForce(mm.CustomExternalForce):
     """OpenMM custom force for propagation on the Muller Potential. Also
     includes pure python evaluation of the potential energy surface so that
@@ -121,20 +138,22 @@ class MullerForce(mm.CustomExternalForce):
 class Params():
   def __init__(self):
     self.friction = ( 100 / picosecond ) / 0.0765 # rescaling to match exptl data PKH  
+    self.timestep = 10.0 * femtosecond# 1e-11 s --> * 100 --> 1e-9 [ns] 
+                                #    72 s --> &*100 --> 7200 [s] (2hrs)     
+    self.nUpdates = 1000  # number of cycldes 
+    self.xPotential = False
+    self.yPotential = False
+
+    # system params (can probably leave these alone in most cases
+    self.nInteg = 100  # integration step per cycle
+    self.mass = 1.0 * dalton
+    self.temperature = 750 * kelvin
 
 params = Params()
 
 def runBD(
   # each particle is totally independent, propagating under the same potential
   nParticles = 100, 
-  mass = 1.0 * dalton,
-  temperature = 750 * kelvin,
-  friction = 100 / picosecond,   # ps= 1000 fs --> 
-  timestep = 10.0 * femtosecond,# 1e-11 s --> * 100 --> 1e-9 [ns] 
-                                #    72 s --> &*100 --> 7200 [s] (2hrs)     
-  nInteg = 100,  # integration step per cycle
-  nUpdates = 1000,  # number of cycldes 
-  addForce=False,
   saveTraj=None,
   trajOutName=None,
   display=False
@@ -160,28 +179,31 @@ def runBD(
 
 
   # define force acting on particle 
-  customforce = CustomForce()
+  customforce = CustomForce(
+    xPotential = params.xPotential,
+    yPotential = params.yPotential
+  )
   for i in range(nParticles):
-      system.addParticle(mass)
+      system.addParticle(params.mass)
       customforce.addParticle(i, [])
   
-  if addForce:
+  if params.xPotential or params.yPotential: 
     print("Adding force") 
     system.addForce(customforce)
 
   
   #integrator = mm.LangevinIntegrator(temperature, friction, timestep)
-  integrator = mm.BrownianIntegrator(temperature, friction, timestep)
+  integrator = mm.BrownianIntegrator(params.temperature, params.friction, params.timestep)
   context = mm.Context(system, integrator)
   
   context.setPositions(startingPositions)
-  context.setVelocitiesToTemperature(temperature)
+  context.setVelocitiesToTemperature(params.temperature)
   
   if display:
     CustomForce.plot(ax=plt.gca())
   
   
-  min_per_hour = 60  #
+  nUpdates = params.nUpdates
   ts = np.arange(nUpdates)/float(nUpdates) * 2*min_per_hour 
   xs = np.reshape( np.zeros( nParticles*nUpdates ), [nParticles,nUpdates])
   ys = np.zeros_like(xs)
@@ -196,15 +218,6 @@ def runBD(
       xs[:,i] = x[:,0]
       ys[:,i] = x[:,1]
       
-      # get msd for each particle 
-      # TODO remove this 
-      #xmsd = x[:,0] - x0s[:,0]
-      #ymsd = x[:,1] - x0s[:,1]
-      #sd = xmsd*xmsd + ymsd*ymsd
-      #msd = np.mean(sd) 
-      #msds[i] = msd 
-  
-  
       # plot 
       if display: 
         plt.scatter(x[:,0], x[:,1], edgecolor='none', facecolor='k')
@@ -212,7 +225,7 @@ def runBD(
       
       
       # integrate 
-      integrator.step(nInteg) # 100 fs <-->  
+      integrator.step(params.nInteg) # 100 fs <-->  
 
   if display:
       plt.show()
@@ -235,7 +248,7 @@ def runBD(
 def PlotStuff(
     
   ):     
-  raise RuntimeError("depprecated") 
+  raise RuntimeError("deprecated") 
   # should move these
   #data = np.loadtxt("/Users/huskeypm/Downloads/trajectories.csv",delimiter=",")
   data = np.loadtxt("trajectories.csv",delimiter=",")
@@ -330,10 +343,10 @@ if __name__ == "__main__":
 
     if(arg=="-validation"):
       #arg1=sys.argv[i+1] 
-      runBD(friction=friction,display=display,addForce=addForce,trajOutName=trajOutName)
+      runBD(display=display,trajOutName=trajOutName)
       quit()
     if(arg=="-test"):
-      runBD(friction=friction,display=display,addForce=addForce,trajOutName=trajOutName, nParticles = numParticles) 
+      runBD(display=display,trajOutName=trajOutName, nParticles = numParticles) 
       quit()
   
 
