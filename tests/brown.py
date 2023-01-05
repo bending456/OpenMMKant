@@ -92,12 +92,15 @@ class CustomForce(mm.CustomExternalForce):
 
 class Params():
   def __init__(self):
+    self.nParticles = 100  
     self.friction = ( 100 / picosecond ) / 0.0765 # rescaling to match exptl data PKH  
     self.timestep = 10.0 * femtosecond# 1e-11 s --> * 100 --> 1e-9 [ns] 
                                 #    72 s --> &*100 --> 7200 [s] (2hrs)     
     self.nUpdates = 1000  # number of cycldes 
     self.xPotential = False
     self.yPotential = False
+  
+    self.trajOutName="test.pkl"
 
     # system params (can probably leave these alone in most cases
     self.nInteg = 100  # integration step per cycle
@@ -106,17 +109,23 @@ class Params():
 
 params = Params()
 
+import yaml
 def runBD(
   # each particle is totally independent, propagating under the same potential
-  nParticles = 100, 
-  saveTraj=None,
-  trajOutName=None,
-  display=False
+  display=False,
+  yamlFile=None
   ): 
-  if saveTraj is not None:
-    raise RuntimeError("saveTraj is antiquated; use trajOutName instead") 
-
-  friction = params.friction  
+  if yamlFile is None:
+    print("YAML file was not provided - using default parameters.") 
+   
+  else:
+    # load yaml
+    with open(yamlFile, 'r') as file:
+      auxParams = yaml.safe_load(file)
+    for key in auxParams.keys():
+      params.key = auxParams[key]
+      print("Adding %s="%(key) , auxParams[key])
+    
 
   # Choose starting conformations uniform on the grid between (-1.5, -0.2) and (1.2, 2)
   # domain unuts [nm?] --> [mm] (1e9) 
@@ -124,6 +133,7 @@ def runBD(
   # 1600 um  x 1600 um <--> 1.6 mm 
   # for mueller potential 
   #startingPositions = (np.random.rand(nParticles, 3) * np.array([2.7, 1.8, 1])) + np.array([-1.5, -0.2, 0])
+  nParticles = params.nParticles 
   startingPositions = (np.random.rand(nParticles, 3) * np.array([0.25,1,1]) + np.array([1,0,0]))  #
   #)startingPositions[:,1] = 2.
   startingPositions[:,2] = 0.
@@ -188,8 +198,9 @@ def runBD(
   # package data 
   ar = [ts,xs,ys]
   import pickle as pkl
+  trajOutName = params.trajOutName
   if trajOutName is not None:
-    if "csv" not in trajOutName:
+    if "pkl" not in trajOutName:
       trajOutName+=".pkl"
     file = open(trajOutName, 'wb') 
     pkl.dump(ar,file)        
@@ -198,47 +209,6 @@ def runBD(
   return ts,xs, ys 
 
      
-# pull more of this into notebook 
-# PKH REMOVE THIS FUNCTION? 
-def PlotStuff(
-    
-  ):     
-  raise RuntimeError("deprecated") 
-  # should move these
-  #data = np.loadtxt("/Users/huskeypm/Downloads/trajectories.csv",delimiter=",")
-  data = np.loadtxt("trajectories.csv",delimiter=",")
-
-  # show trajectory 
-  display = False   
-  #display = True    
-  if display: 
-    plt.plot(xPos[:,0], xPos[:,1])
-    plt.show()
-  
-  
-  # display rmsd
-  display = False 
-  display = True    
-  if display:
-    plt.plot(ts/min_per_hour,msds,label="Sim")
-    plt.xlabel("t [hr]") 
-    plt.ylabel("MSD [um**2]") 
-
-    adjTime = 2/50. # not sure why 50 entries, assuming 2 hrs 
-    texp = data[:,0]*adjTime
-    msdexp=data[:,1]
-    texp_=texp.reshape((-1, 1))
-    model = LinearRegression().fit(texp_,msdexp)
-    msdfit= model.intercept_ + texp*model.coef_
-    plt.plot(texp,msdexp, label="exp")
-    plt.plot(texp,msdfit, label="fit")
-    plt.legend(loc=0)
-  
-    # 1K ts --> 2hrs/7200s?  
-    # 200 [um**2 ] 
-    #plt.show()
-    plt.gca().savefig("compare.png") 
-
 
 #!/usr/bin/env python
 import sys
@@ -279,29 +249,23 @@ if __name__ == "__main__":
   #  1
   #  #print "arg"
 
-  friction = 1/picosecond
-  trajOutName = None 
   display=False 
-  addForce=False 
-  numParticles = 100 
+  yamlFile = None 
+  
   # Loops over each argument in the command line 
   for i,arg in enumerate(sys.argv):
     # calls 'doit' with the next argument following the argument '-validation'
     if(arg=="-display"):
       display=True
-    if(arg=="-addForce"):
-      addForce=True
-    if(arg=="-numParticles"):
-      numParticles = int(sys.argv[i+1]) 
-    if(arg=="-trajOutName"):
-      trajOutName = sys.argv[i+1]
+    if(arg=="-yamlFile"):
+      yamlFile= sys.argv[i+1]
 
     if(arg=="-validation"):
       #arg1=sys.argv[i+1] 
-      runBD(display=display,trajOutName=trajOutName)
+      runBD(display=display,yamlFile=yamlFile)
       quit()
     if(arg=="-test"):
-      runBD(display=display,trajOutName=trajOutName, nParticles = numParticles) 
+      runBD(display=display,yamlFile=yamlFile)
       quit()
   
 
