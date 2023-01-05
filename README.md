@@ -1,12 +1,12 @@
-# OpenMMKant 
-For now, this needs to be run from Kant
+Code for running langevin particle simulations
+
 
 ## Installation
 - Open a terminal window (on kant) 
 git clone https://github.com/bending456/OpenMMKant
 
 
-## Initialization  
+## Initialization (if run on kant)  
 -Add/revise a file call config.bash to your directory and paste the following commands
 
 ```
