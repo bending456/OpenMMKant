@@ -2,11 +2,9 @@ Code for running langevin particle simulations
 
 
 ## Installation
-- Open a terminal window (on kant) 
+## from CLI 
 git clone https://github.com/bending456/OpenMMKant
 
-
-## Initialization (if run on kant)  
 -Add/revise a file call config.bash to your directory and paste the following commands
 
 ```
@@ -25,8 +23,16 @@ source config.bash
 python3 -c "import simtk"
 
 ## Execution 
-python3 tests/brown.py
+python3 tests/brown.py -validation 
 Note: some of our installations are old, so you make have to import simtk.openmm instead of just openmm. If so, edit tests/brown.py accordingly
+
+
+python3 tests/brown.py -yamlFile FILE.pkl -run
+
+## From anaconda
+See http://docs.openmm.org/latest/userguide/application/01_getting_started.html
+conda install -c conda-forge openmm
+
 
 
 ## Other examples 
