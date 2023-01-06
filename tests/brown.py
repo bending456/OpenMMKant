@@ -18,41 +18,57 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 
 min_per_hour = 60  #
+# TODO put into param object
+cAttr      = 1.     # conc. of chemoattractant 
+diamCell   = 1e-2   # [mm]
+diamOccl   = 1e-1   # [mm]
+lenDom     = 1e0    # [mm]
 
-# TODO: adj. shape of the potential 
+
 # https://demonstrations.wolfram.com/TrajectoriesOnTheMullerBrownPotentialEnergySurface/#more
 class CustomForce(mm.CustomExternalForce):
     """OpenMM custom force for propagation on the Muller Potential. Also
     includes pure python evaluation of the potential energy surface so that
     you can do some plotting"""
-    aa = [10]
+    aa = [10]       
     bb = [100]
-    XX = [-10] 
-    YY = [1]
+    XX = [0] # need to adjust this to the domain size 
+    YY = [0]
 
     def __init__(self,
-        yPotential = True,  # confines particles within a region of the y-axis 
-        xPotential = False  # defines a gradient along the x-axis (will be basis of chemotactic gradient) 
+        paramDict 
         ):
-
-        self.yPotential = yPotential
-        self.xPotential = xPotential
+        
+        pD = paramDict
+        yPotential = pD["yPotential"]
+        xPotential = pD["xPotential"]
+ 
+        # chemoattractant gradient ; assume RHS is maximal ATP
+        # c(x=len) = cAttr * ac *x ---> ac = c/lenDom 
+        ac    = cAttr/lenDom
+        self.aa[0] = -1 * pD["xScale"] * ac # make attractive for U = -xScale * c       
+         
 
         # start with a harmonic restraint on the Z coordinate
         expression = '1000.0 * z^2'
 
         # any changes here must be made in potential() below too 
-        #for j in range(1):
-        if 1: 
-            j=0
-            # add the muller terms for the X and Y
-            fmt = dict(aa=self.aa[j], XX=self.XX[j], bb=self.bb[j], YY=self.YY[j])
-            # y parabola 
-            if self.yPotential:
-              expression += '''+ {bb} * (y - {YY})^4'''.format(**fmt)
-            # x gradient 
-            if self.xPotential:
-              expression += '''+ {aa} * x + {XX}'''.format(**fmt)
+        j=0   # TODO superfluous, remove later 
+
+        if yPotential is False:
+          self.bb[j]=0.
+        if xPotential is False:
+          self.aa[j]=0.
+             
+        # add the terms for the X and Y
+        fmt = dict(aa=self.aa[j], XX=self.XX[j], bb=self.bb[j], YY=self.YY[j])
+
+        # y parabola 
+        expression += '''+ {bb} * (y - {YY})^4'''.format(**fmt)
+        # xExpression
+        expression += '''+ {aa} * x + {XX}'''.format(**fmt)
+  
+        print(expression)
                                
         super(CustomForce, self).__init__(expression)
 
@@ -61,14 +77,15 @@ class CustomForce(mm.CustomExternalForce):
     # only used for plotting, so ignores z-direction 
     def potential(cls, x, y):
         "Compute the potential at a given point x,y"
+        # use cls., not self. here 
         value = 0
         for j in range(1):
             # y parabola
-            if self.yPotential:
-              value += cls.bb[j] * (y - cls.YY[j])**4
+            #if cls.yPotential:
+            value += cls.bb[j] * (y - cls.YY[j])**4
             # x gradient
-            if self.xPotential:
-              value += cls.aa[j] * x + cls.XX[j]
+            #if cls.xPotential:
+            value += cls.aa[j] * x + cls.XX[j]
                 
         return value
 
@@ -84,6 +101,7 @@ class CustomForce(mm.CustomExternalForce):
         if ax is None:
             ax = plt
         ax.contourf(xx, yy, V.clip(max=200), 40, **kwargs)
+        ax.colorbar()
 
 
 
@@ -97,11 +115,13 @@ class Params():
 
     paramDict["nParticles"] = 100  
     paramDict["friction"] = ( 100 / picosecond ) / 0.0765 # rescaling to match exptl data PKH  
+    print(paramDict["friction"])
     paramDict["timestep"] = 10.0 * femtosecond# 1e-11 s --> * 100 --> 1e-9 [ns] 
                                 #    72 s --> &*100 --> 7200 [s] (2hrs)     
     paramDict["nUpdates"] = 1000  # number of cycldes 
     paramDict["xPotential"] = False
     paramDict["yPotential"] = False
+    paramDict["xScale"]   = 100.   # scale for chemoattractant gradient 
   
     paramDict["trajOutName"]="test.pkl"
 
@@ -142,7 +162,7 @@ def runBD(
   # for mueller potential 
   #startingPositions = (np.random.rand(nParticles, 3) * np.array([2.7, 1.8, 1])) + np.array([-1.5, -0.2, 0])
   nParticles = paramDict["nParticles"] 
-  startingPositions = (np.random.rand(nParticles, 3) * np.array([0.25,1,1]) + np.array([1,0,0]))  #
+  startingPositions = (np.random.rand(nParticles, 3) * np.array([0.25,1,1]) + np.array([0,0,0]))  #
   #)startingPositions[:,1] = 2.
   startingPositions[:,2] = 0.
   ###############################################################################
@@ -152,10 +172,8 @@ def runBD(
 
 
   # define force acting on particle 
-  customforce = CustomForce(
-    xPotential = paramDict["xPotential"],
-    yPotential = paramDict["yPotential"]
-  )
+  customforce = CustomForce(paramDict)
+
   for i in range(nParticles):
       system.addParticle(paramDict["mass"])
       customforce.addParticle(i, [])
