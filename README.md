@@ -1,11 +1,20 @@
 Code for running langevin particle simulations
 
 
-## Installation
-## from CLI 
-git clone https://github.com/bending456/OpenMMKant
+# Installation
+## Python packages via anaconda
+See http://docs.openmm.org/latest/userguide/application/01_getting_started.html
+```
+conda install -c conda-forge openmm
+```
 
--Add/revise a file call config.bash to your directory and paste the following commands
+## from CLI 
+- Check out the code 
+```
+git clone https://github.com/bending456/OpenMMKant
+```
+
+- Revise the file config.bash to include the following environmental variables
 
 ```
 export GOPATH=${HOME}/go
@@ -16,26 +25,40 @@ export PATH=/usr/local/cuda-10.1/bin:/usr/local/cuda-10.1/bin:/home/bchun/.local
 export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:/usr/local/cuda-10.1/lib64::/home/bchun/OpenMM/lib:/home/bchun/OpenMMpy2/lib:/home/bchun/OpenMM:/home/bchun/OpenMMpy2:/home/bchun/.openmpi/lib/:/home/bchun/.openmpi/lib/
 ```
 
-- add config.bash to your source 
+- add config.bash to your environment
+```
 source config.bash
+```
 
-## Test installation 
+- Test the installation 
+```
 python3 -c "import simtk"
+```
 
 ## Execution 
+- It is recommended to run brown.py from the command line via 
+```
 python3 tests/brown.py -validation 
-Note: some of our installations are old, so you make have to import simtk.openmm instead of just openmm. If so, edit tests/brown.py accordingly
+```
 
 
-python3 tests/brown.py -yamlFile FILE.pkl -run
+- The program is customized using parameters that are loaded in 'yaml' format. The syntax for calling the code with FILE.yaml is
+```
+python3 tests/brown.py -yamlFile FILE.yaml -run
+```
 
-## From anaconda
-See http://docs.openmm.org/latest/userguide/application/01_getting_started.html
-conda install -c conda-forge openmm
+- An example yaml file is provided [here](https://github.com/bending456/OpenMMKant/blob/main/tests/paramSet1.yaml). In this example, the trajectory file is written to x.pkl
+
+
+- Note: some of our installations are old, so you make have to import simtk.openmm instead of just openmm. If so, edit tests/brown.py accordingly
+
+
+## Analysis
+- Trajectory files like test.pkl can be opened and analyzed using the notebook in ./test
 
 
 
-## Other examples 
+## Other examples (Deprecated for now) 
 Test case: 
 ```
 $ python3 operator.py
