@@ -41,9 +41,10 @@ class CustomForce(mm.CustomExternalForce):
         # start with a harmonic restraint on the Z coordinate
         expression = '1000.0 * z^2'
 
-	# PKH: this range isnt necessary - remove 
         # any changes here must be made in potential() below too 
-        for j in range(1):
+        #for j in range(1):
+        if 1: 
+            j=0
             # add the muller terms for the X and Y
             fmt = dict(aa=self.aa[j], XX=self.XX[j], bb=self.bb[j], YY=self.YY[j])
             # y parabola 
@@ -92,21 +93,27 @@ class CustomForce(mm.CustomExternalForce):
 
 class Params():
   def __init__(self):
-    self.nParticles = 100  
-    self.friction = ( 100 / picosecond ) / 0.0765 # rescaling to match exptl data PKH  
-    self.timestep = 10.0 * femtosecond# 1e-11 s --> * 100 --> 1e-9 [ns] 
+    paramDict = dict()
+
+    paramDict["nParticles"] = 100  
+    paramDict["friction"] = ( 100 / picosecond ) / 0.0765 # rescaling to match exptl data PKH  
+    paramDict["timestep"] = 10.0 * femtosecond# 1e-11 s --> * 100 --> 1e-9 [ns] 
                                 #    72 s --> &*100 --> 7200 [s] (2hrs)     
-    self.nUpdates = 1000  # number of cycldes 
-    self.xPotential = False
-    self.yPotential = False
+    paramDict["nUpdates"] = 1000  # number of cycldes 
+    paramDict["xPotential"] = False
+    paramDict["yPotential"] = False
   
-    self.trajOutName="test.pkl"
+    paramDict["trajOutName"]="test.pkl"
 
     # system params (can probably leave these alone in most cases
-    self.nInteg = 100  # integration step per cycle
-    self.mass = 1.0 * dalton
-    self.temperature = 750 * kelvin
+    paramDict["nInteg"] = 100  # integration step per cycle
+    paramDict["mass"] = 1.0 * dalton
+    paramDict["temperature"] = 750 * kelvin
 
+    # store all values 
+    self.paramDict = paramDict
+
+# allocate instance 
 params = Params()
 
 import yaml
@@ -122,18 +129,19 @@ def runBD(
     # load yaml
     with open(yamlFile, 'r') as file:
       auxParams = yaml.safe_load(file)
+    
+    paramDict = params.paramDict
     for key in auxParams.keys():
-      params.key = auxParams[key]
+      paramDict[key] = auxParams[key]
       print("Adding %s="%(key) , auxParams[key])
     
-
   # Choose starting conformations uniform on the grid between (-1.5, -0.2) and (1.2, 2)
   # domain unuts [nm?] --> [mm] (1e9) 
   # TODO: define size of domain 
   # 1600 um  x 1600 um <--> 1.6 mm 
   # for mueller potential 
   #startingPositions = (np.random.rand(nParticles, 3) * np.array([2.7, 1.8, 1])) + np.array([-1.5, -0.2, 0])
-  nParticles = params.nParticles 
+  nParticles = paramDict["nParticles"] 
   startingPositions = (np.random.rand(nParticles, 3) * np.array([0.25,1,1]) + np.array([1,0,0]))  #
   #)startingPositions[:,1] = 2.
   startingPositions[:,2] = 0.
@@ -145,30 +153,30 @@ def runBD(
 
   # define force acting on particle 
   customforce = CustomForce(
-    xPotential = params.xPotential,
-    yPotential = params.yPotential
+    xPotential = paramDict["xPotential"],
+    yPotential = paramDict["yPotential"]
   )
   for i in range(nParticles):
-      system.addParticle(params.mass)
+      system.addParticle(paramDict["mass"])
       customforce.addParticle(i, [])
   
-  if params.xPotential or params.yPotential: 
+  if paramDict["xPotential"] or paramDict["yPotential"]: 
     print("Adding force") 
     system.addForce(customforce)
 
   
   #integrator = mm.LangevinIntegrator(temperature, friction, timestep)
-  integrator = mm.BrownianIntegrator(params.temperature, params.friction, params.timestep)
+  integrator = mm.BrownianIntegrator(paramDict["temperature"], paramDict["friction"], paramDict["timestep"])
   context = mm.Context(system, integrator)
   
   context.setPositions(startingPositions)
-  context.setVelocitiesToTemperature(params.temperature)
+  context.setVelocitiesToTemperature(paramDict["temperature"])
   
   if display:
     CustomForce.plot(ax=plt.gca())
   
   
-  nUpdates = params.nUpdates
+  nUpdates = paramDict["nUpdates"]
   ts = np.arange(nUpdates)/float(nUpdates) * 2*min_per_hour 
   xs = np.reshape( np.zeros( nParticles*nUpdates ), [nParticles,nUpdates])
   ys = np.zeros_like(xs)
@@ -190,7 +198,7 @@ def runBD(
       
       
       # integrate 
-      integrator.step(params.nInteg) # 100 fs <-->  
+      integrator.step(paramDict["nInteg"]) # 100 fs <-->  
 
   if display:
       plt.show()
@@ -198,7 +206,7 @@ def runBD(
   # package data 
   ar = [ts,xs,ys]
   import pickle as pkl
-  trajOutName = params.trajOutName
+  trajOutName = paramDict["trajOutName"]
   if trajOutName is not None:
     if "pkl" not in trajOutName:
       trajOutName+=".pkl"
