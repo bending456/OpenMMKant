@@ -325,6 +325,7 @@ def simulator(ExtATP = 10,
     Delta = attractive force switch 
     
     '''
+    # PKH keep 
     nonbond = CustomNonbondedForce("(sigma/r)^12-delta*(sigma/r)^6; sigma=0.5*(sigma1+sigma2); delta=0.5*(delta1+delta2)")
     nonbond.addPerParticleParameter("sigma")
     nonbond.addPerParticleParameter("delta")
@@ -361,6 +362,7 @@ def simulator(ExtATP = 10,
         #Either Square or Slab without Dead Cells
         if DeadCellRef1 == 0:
             #1st - live cells
+            # PKH keep 
             if i < numOfCells1 + numOfCells2:
                 system.addParticle(MassOfCell)  # 100.0 is a particle mass
                 sigma = RepulsiveScale

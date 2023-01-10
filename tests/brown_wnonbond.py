@@ -185,6 +185,23 @@ def runBD(
     print("Adding force") 
     system.addForce(customforce)
 
+  # define nonbond force between particles
+  from openmm.openmm import CustomNonbondedForce
+  nonbond = CustomNonbondedForce("(sigma/r)^12-delta*(sigma/r)^6; sigma=0.5*(sigma1+sigma2); delta=0.5*(delta1+delta2)") # TODO: don't we use geometric avg for this ?
+  nonbond.addPerParticleParameter("sigma")
+  nonbond.addPerParticleParameter("delta")  
+  nonbond.setCutoffDistance(9)
+  # Add force to the System
+  system.addForce(nonbond)
+
+  # TODO: might need to integrate into loop above, when particles are added to system
+  repulsiveScale = 0.1
+  for i in range(nParticles):
+    sigma = repulsiveScale
+    delta = 0
+    nonbond.addParticle([sigma,delta])
+
+  
   #integrator = mm.LangevinIntegrator(temperature, friction, timestep)
   integrator = mm.BrownianIntegrator(paramDict["temperature"], paramDict["friction"], paramDict["timestep"])
   context = mm.Context(system, integrator)
