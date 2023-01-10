@@ -290,7 +290,7 @@ if __name__ == "__main__":
       #arg1=sys.argv[i+1] 
       runBD(display=display,yamlFile=yamlFile)
       quit()
-    if(arg=="-test"):
+    if(arg=="-run"):
       runBD(display=display,yamlFile=yamlFile)
       quit()
   

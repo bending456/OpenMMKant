@@ -1,5 +1,5 @@
 nParticles: 10
-nUpdates: 1000
+nUpdates: 10
 trajOutName: test2.pkl
 xPotential: True
 xScale:  90.
