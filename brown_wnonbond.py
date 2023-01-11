@@ -13,6 +13,8 @@ from simtk.unit import kelvin, picosecond, femtosecond, nanometer, dalton
 import simtk.openmm as mm
 # otherwise 
 #import openmm as mm
+from simtk.openmm import *
+from simtk.openmm.app import *
 
 import matplotlib.pylab as plt
 import numpy as np
@@ -165,28 +167,50 @@ def runBD(
   # for mueller potential 
   #startingPositions = (np.random.rand(nParticles, 3) * np.array([2.7, 1.8, 1])) + np.array([-1.5, -0.2, 0])
   nParticles = paramDict["nParticles"] 
-  startingPositions = (np.random.rand(nParticles, 3) * np.array([0.25,1,1]) + np.array([0,0,0]))  #
+  startingPositions = (np.random.rand(nParticles, 3) * np.array([10,10,0]) + np.array([-10,0,0]))  #
   #)startingPositions[:,1] = 2.
   startingPositions[:,2] = 0.
   ###############################################################################
+  print("WARNING: taking over the first particle in order to make it a crowder; generalize later")
+  iCrowder = 0
+  startingPositions[iCrowder,:]=0.
   
   
   system = mm.System()
 
+  ## define outputs for coordinates
+  import calculator as calc 
+  trajOutName="test"
+  pdbFileName = trajOutName+".pdb"
+  dcdFileName = trajOutName+".dcd"
+  # define arbitrary pdb
+  calc.genPDBWrapper(pdbFileName,nParticles,startingPositions)
+  # add to openmm
+  pdb = PDBFile(pdbFileName)
+
+  # Configure dcd                    
+  dumpSize = 100 
+  dcdReporter = DCDReporter(dcdFileName, dumpSize)
+
+
 
   # define external force acting on particle 
+  print("WARNING: custom force seems to be ignoring the z potential") 
   customforce = CustomForce(paramDict)
 
   for i in range(nParticles):
-      system.addParticle(paramDict["mass"])
-      customforce.addParticle(i, [])
+      if i != iCrowder:
+        system.addParticle(paramDict["mass"])
+        customforce.addParticle(i, [])
+      else:
+        system.addParticle(paramDict["mass"]*1e4)
+        # PKH - i don't think I need a custom force for this one 
   
   if paramDict["xPotential"] or paramDict["yPotential"]: 
     print("Adding force") 
-    system.addForce(customforce)
+    system.addForce(customforce) # <-- PKH should this be added earlier to keep things in z
 
   # define nonbond force between particles
-  from openmm.openmm import CustomNonbondedForce
   nonbond = CustomNonbondedForce("(sigma/r)^12-delta*(sigma/r)^6; sigma=0.5*(sigma1+sigma2); delta=0.5*(delta1+delta2)") # TODO: don't we use geometric avg for this ?
   nonbond.addPerParticleParameter("sigma")
   nonbond.addPerParticleParameter("delta")  
@@ -197,17 +221,27 @@ def runBD(
   # TODO: might need to integrate into loop above, when particles are added to system
   repulsiveScale = 0.1
   for i in range(nParticles):
-    sigma = repulsiveScale
-    delta = 0
+    if i != iCrowder:
+      sigma = repulsiveScale
+      delta = 0
+    else:
+      sigma = repulsiveScale * 10
+      delta = 5
     nonbond.addParticle([sigma,delta])
 
   
   #integrator = mm.LangevinIntegrator(temperature, friction, timestep)
   integrator = mm.BrownianIntegrator(paramDict["temperature"], paramDict["friction"], paramDict["timestep"])
-  context = mm.Context(system, integrator)
+  simulation = Simulation(pdb.topology, system,integrator) 
+  #context = mm.Context(system, integrator)
   
-  context.setPositions(startingPositions)
-  context.setVelocitiesToTemperature(paramDict["temperature"])
+  simulation.context.setPositions(startingPositions)
+  simulation.context.setVelocitiesToTemperature(paramDict["temperature"])
+  #context.setPositions(startingPositions)
+  #context.setVelocitiesToTemperature(paramDict["temperature"])
+
+  # dcd writing
+  simulation.reporters.append(dcdReporter)
   
   if display:
     CustomForce.plot(ax=plt.gca())
@@ -220,33 +254,43 @@ def runBD(
   
   #msds = np.zeros( nUpdates ) 
   #x0s = context.getState(getPositions=True).getPositions(asNumpy=True).value_in_unit(nanometer)
+
+  # minimize to reconcile bad contacts
+  #simulation.minimizeEnergy() # don't do this, since it will move the crowders too 
+
   #
   # START ITERATOR 
   #
   for i in range(nUpdates): 
       # get positions at ith cycle 
-      x = context.getState(getPositions=True).getPositions(asNumpy=True).value_in_unit(nanometer)
+      x = simulation.context.getState(getPositions=True).getPositions(asNumpy=True).value_in_unit(nanometer)
   
       # get particle's positions 
       xs[:,i] = x[:,0]
       ys[:,i] = x[:,1]
+      #print(x[1,:])
+      #print("------") 
+      #print(x[0:5,:])
       
       # plot 
       if display: 
-        plt.scatter(x[:,0], x[:,1], edgecolor='none', facecolor='k')
+        #plt.scatter(x[:,0], x[:,1], edgecolor='none', facecolor='k')
+        plt.scatter(x[1:5,0], x[1:5,1], edgecolor='none', facecolor='k')
   
       
       
       # integrate 
-      integrator.step(paramDict["nInteg"]) # 100 fs <-->  
+      #integrator.step(paramDict["nInteg"]) # 100 fs <-->  
+      simulation.step( paramDict["nInteg"] ) 
   #
   # END ITERATOR 
   #
 
   if display:
-      plt.show()
+      plt.show() 
 
   # package data 
+
   ar = [ts,xs,ys]
   import pickle as pkl
   trajOutName = paramDict["trajOutName"]
@@ -290,10 +334,12 @@ Notes:
 if __name__ == "__main__":
   import sys
   msg = helpmsg()
-  remap = "none"
+
 
   if len(sys.argv) < 2:
       raise RuntimeError(msg)
+
+
 
   #fileIn= sys.argv[1]
   #if(len(sys.argv)==3):
@@ -311,10 +357,14 @@ if __name__ == "__main__":
     if(arg=="-yamlFile"):
       yamlFile= sys.argv[i+1]
 
+    #
+    # Run modes 
+    # 
     if(arg=="-validation"):
       #arg1=sys.argv[i+1] 
       runBD(display=display,yamlFile=yamlFile)
       quit()
+
     if(arg=="-run"):
       runBD(display=display,yamlFile=yamlFile)
       quit()

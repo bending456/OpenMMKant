@@ -439,12 +439,25 @@ def genCellCoord3D(Density1,               # resting cells in first compartment
 ###########################################################################
 ###                           PDB Generator                             ###
 ###########################################################################
+
+def genPDBWrapper(
+        pdbFileName,
+        nCells,
+        startingPositions=None):
+    """
+    This is a wrapper for Ben's PDB writer, siunce I needed something simple.
+    Later I can revise his code to accept coordinates; currently they're randomized 
+    """
+    PDBgenNoPBC(pdbFileName,nCells,0,0,0,"None",startingPositions=startingPositions)
+    
+
 def PDBgenNoPBC(PDBfileName,
                 NoCell1, 
                 NoCell2,
                 numOfDeadCell,
                 num_BP,
-                DiffState):
+                DiffState,  
+                startingPositions=None):
     '''
     
     [Note]: 11/06/2020 by Ben 
@@ -457,7 +470,10 @@ def PDBgenNoPBC(PDBfileName,
 
     '''    
     # --- Writing pdb file initiated ---
-    structure = open(PDBfileName+".pdb","w") 
+    daFile = PDBfileName
+    if ".pdb" not in daFile:
+        daFile = daFile+".pdb"
+    structure = open(daFile,"w") 
     structure.write("MODEL     1 \n")
 
     '''
@@ -474,9 +490,19 @@ def PDBgenNoPBC(PDBfileName,
     
     ## Dead Cell first: There is no distinction between 1st and 2nd compartment for the dead cells 
     for i in np.arange(TotalNoCell):
-        x = format(randint(0,9),'.3f')
-        y = format(randint(0,9),'.3f')
-        z = format(randint(0,9),'.3f')
+        # add random positions if starting positions are not defined 
+        if startingPositions is None:
+          x = randint(0,9)
+          y = randint(0,9)
+          z = randint(0,9)
+        else:
+          #print(np.shape(startingPositions))
+          x,y,z = startingPositions[i,:]
+
+        # make sure num sig. figs is correct for pdb
+        x = format(x,'6.3f') # any changest to this need to be reflected in spacing below 
+        y = format(y,'6.3f')
+        z = format(z,'6.3f')
         
         if numOfDeadCell == 0:
             if i < NoCell1:
@@ -502,15 +528,15 @@ def PDBgenNoPBC(PDBfileName,
                 name = 'BC'
 
         if i < 9:
-            structure.write("ATOM      "+str(int(i+1))+"  "+name+"   "+name+"     "+str(int(i+1))+"       "+str(x)+"   "+str(y)+"   "+str(z)+"  1.00  0.00 \n")
+            structure.write("ATOM      "+str(int(i+1))+"  "+name+"   "+name+"     "    +str(int(i+1))+"      "+str(x)+"  "+str(y)+"  "+str(z)+"  1.00  0.00 \n")
         elif i >= 9 and i < 99:
-            structure.write("ATOM     "+str(int(i+1))+"  "+name+"   "+name+"    "+str(int(i+1))+"       "+str(x)+"   "+str(y)+"   "+str(z)+"  1.00  0.00 \n")
+            structure.write("ATOM     "+ str(int(i+1))+"  "+name+"   "+name+  "    "   +str(int(i+1))+"      "+str(x)+"  "+str(y)+"  "+str(z)+"  1.00  0.00 \n")
         elif i >= 99 and i < 999:
-            structure.write("ATOM    "+str(int(i+1))+"  "+name+"   "+name+"   "+str(int(i+1))+"       "+str(x)+"   "+str(y)+"   "+str(z)+"  1.00  0.00 \n")
+            structure.write("ATOM    "+  str(int(i+1))+"  "+name+"   "+name+    "   "  +str(int(i+1))+"      "+str(x)+"  "+str(y)+"  "+str(z)+"  1.00  0.00 \n")
         elif i >= 999 and i < 9999:
-            structure.write("ATOM   "+str(int(i+1))+"  "+name+"   "+name+"  "+str(int(i+1))+"       "+str(x)+"   "+str(y)+"   "+str(z)+"  1.00  0.00 \n")
+            structure.write("ATOM   "+   str(int(i+1))+"  "+name+"   "+name+      "  " +str(int(i+1))+"      "+str(x)+"  "+str(y)+"  "+str(z)+"  1.00  0.00 \n")
         elif i >= 9999:
-            structure.write("ATOM  "+str(int(i+1))+"  "+name+"   "+name+"  "+str(int(i+1))+"      "+str(x)+"   "+str(y)+"   "+str(z)+"  1.00  0.00 \n")
+            structure.write("ATOM  "+    str(int(i+1))+"  "+name+"   "+name+        " "+str(int(i+1))+"      "+str(x)+"  "+str(y)+"  "+str(z)+"  1.00  0.00 \n")
             
     structure.write("ENDMDL")
     structure.close

@@ -57,7 +57,10 @@ python3 tests/brown.py -yamlFile FILE.yaml -run
 - Trajectory files like test.pkl can be opened and analyzed using the notebook in ./test
 
 
+## TODO
+There is some kind of problem with the z-constraint. Compare brown.py z coordinates relative to openmuller.py in the tests directory 
 
+###############################################
 ## Other examples (Deprecated for now) 
 Test case: 
 ```

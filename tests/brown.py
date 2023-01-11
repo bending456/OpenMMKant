@@ -213,6 +213,7 @@ def runBD(
       # get particle's positions 
       xs[:,i] = x[:,0]
       ys[:,i] = x[:,1]
+      print(x[:,2])
       
       # plot 
       if display: 
