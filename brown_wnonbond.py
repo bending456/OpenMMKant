@@ -99,7 +99,7 @@ class CustomForce(mm.CustomExternalForce):
 
     @classmethod
     #def plot(cls, ax=None, minx=-1.5, maxx=3.0, miny=0.0, maxy=2, **kwargs):
-    def plot(cls, ax=None, minx=-10, maxx=10.0, miny=-10.0, maxy=10, **kwargs):
+    def plot(cls, ax=None, minx=-100, maxx=100.0, miny=-100.0, maxy=100, **kwargs):
         "Plot the potential"
         grid_width = max(maxx-minx, maxy-miny) / 200.0
         ax = kwargs.pop('ax', None)
@@ -123,9 +123,9 @@ class Params():
     paramDict = dict()
 
     paramDict["nParticles"] = 100  
+    paramDict["nCrowders"] = 100  
     paramDict["friction"] = ( 50 / picosecond ) # rescaling to match exptl data PKH  
     paramDict["friction"] = ( 50              ) # rescaling to match exptl data PKH  
-    print(paramDict["friction"])
     paramDict["timestep"] = 10.0 * femtosecond# 1e-11 s --> * 100 --> 1e-9 [ns] 
                                 #    72 s --> &*100 --> 7200 [s] (2hrs)     
     paramDict["nUpdates"] = 1000  # number of cycldes 
@@ -133,10 +133,11 @@ class Params():
     paramDict["yPotential"] = False
     paramDict["xScale"]   = 100.   # scale for chemoattractant gradient 
     paramDict["frameRate"]=   1.  # [1 min/update]
-  
+    paramDict["crowderRad"]= 10.  # [um]
     paramDict["outName"]="test"
 
     # system params (can probably leave these alone in most cases
+    paramDict["dim"]    = 200  # [um] dimensions of domain 
     paramDict["nInteg"] = 100  # integration step per cycle
     paramDict["mass"] = 1.0 * dalton
     paramDict["temperature"] = 750 * kelvin
@@ -179,7 +180,15 @@ def runBD(
 
   import lattice 
   crowderPos = np.array([0,0,0.]) 
-  cellCoords = lattice.GenerateLattice(crowderPos, (nParticles - 1) ) 
+
+  print("NOT IMPLEMENTED FULLY")
+  lattice.GenerateCrowderLattice(16,dim=20)  # generate 16 crowders
+
+
+  cellCoords = lattice.GenerateRandomLattice(
+          crowderPos, crowderRad=paramDict["crowderRad"], 
+          dim = paramDict["dim"],           
+          nParticles=(nParticles - 1) ) 
   startingPositions = np.zeros([nParticles,3])
   startingPositions[iCrowder,:] = crowderPos
   startingPositions[1:,:] = cellCoords
@@ -239,8 +248,7 @@ def runBD(
       sigma = repulsiveScale
       delta = 0  # no attraction with other particles of same type 
     else:
-      sigma = repulsiveScale * 10 # verified this is working
-      sigma = repulsiveScale * 1. # verified this is working
+      sigma = paramDict["crowderRad"]
       #delta = 50
       delta = 0           
     nonbond.addParticle([sigma,delta])

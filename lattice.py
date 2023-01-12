@@ -1,20 +1,14 @@
 import numpy as np
 
-dim = 20 # [um]     
-nLattice = 100
-nRow     =  10 
-latticeSpace = dim/nRow
 
-crowderRad = 10   
 
-def GenerateLattice( 
-  crowderPos = np.array([0,0,0]), # where crowder is located 
-  nParticles = 50 
-  ) : 
-  """ 
-  Generates a distribution of cells and a crowder on a regular lattice
-  """
+def GenerateLattice(
+        nLattice,
+        nRow,
+        dim
+        ):
 
+  latticeSpace = dim/nRow
   
   latticePts = np.zeros([nLattice,3]) 
   for i in range(nLattice):
@@ -23,25 +17,64 @@ def GenerateLattice(
       #print(xi,yi)
       latticePts[i,0:2] = [xi*latticeSpace,yi*latticeSpace]
   
+
   # shift s.t. 
   latticePts[:,0] -= dim/2.
   latticePts[:,1] -= dim/2.
+
+  return latticePts
+
+def GenerateCrowderLattice(
+  nParticles,
+  dim=20):
+
+  nRow = int( np.ceil( np.sqrt( nParticles ) )  )
+  nLattice=nRow**2
+
+  latticePts = GenerateLattice(nLattice,nRow,dim)
+
+
+
+def GenerateRandomLattice( 
+  # PKH turn into nCrowder x 3 array 
+  crowderPos = np.array([0,0,0]), # where crowder is located 
+  crowderRad = 10.,
+  nParticles = 50,
+  dim = 200 # [um]     This should be passed in somewhere  
+  ) : 
+  """ 
+  Generates a distribution of cells and a crowder on a regular lattice
+  """
+  nLattice = 100
+  nRow     =  10 
+  latticePts = GenerateLattice(nLattice,nRow,dim)
+  latticeIdxs= np.arange( np.shape(latticePts)[0])
 
   #print(latticePts) 
   #quit()
   
   # place crowder 
-  minDist = (latticePts[:,0] - crowderPos[0])**2
-  minDist+= (latticePts[:,1] - crowderPos[1])**2
-  crowderIdx = np.argmin(minDist)
+  # PKH iterate over each crowder position 
+  minDistSqd = (latticePts[:,0] - crowderPos[0])**2
+  minDistSqd+= (latticePts[:,1] - crowderPos[1])**2
+  #crowderIdx = np.argmin(minDist)
   #print(crowderIdx)
   
   # 'block' neighbors 
-  #crowderRad = 299
-  cellIdx = np.argwhere(minDist > crowderRad**2) 
+  # PKH find all cells that VIOLATE crowderRad
+  #cellIdx = np.argwhere(minDist > crowderRad**2) 
+  clashIdx = np.argwhere(minDistSqd <= crowderRad**2) 
+  cellIdx = np.delete(latticeIdxs,clashIdx)
+  #print(len(cellIdx))
+  #print(cellIdx)
+  #quit()
+
+  # store only those indices that are not in the violaters group 
+
   nCellIdx = np.shape(cellIdx)[0]
   if nCellIdx < nParticles:
       raise RuntimeError("Not enough spaces to place cells") 
+
   
   # get random set of lattice points 
   #print(np.shape(cellIdx)) 
