@@ -33,8 +33,8 @@ class CustomForce(mm.CustomExternalForce):
     """OpenMM custom force for propagation on the Muller Potential. Also
     includes pure python evaluation of the potential energy surface so that
     you can do some plotting"""
-    aa = [10]       
-    bb = [100]
+    aa = [5e-3]       
+    bb = [5e-3]
     XX = [0] # need to adjust this to the domain size 
     YY = [0]
 
@@ -68,8 +68,9 @@ class CustomForce(mm.CustomExternalForce):
 
         # y parabola 
         expression += '''+ {bb} * (y - {YY})^4'''.format(**fmt)
-        # xExpression
-        expression += '''+ {aa} * x + {XX}'''.format(**fmt)
+        # xExpression / gradient 
+        #expression += '''+ {aa} * x + {XX}'''.format(**fmt)
+        expression += '''+ {bb} * (x - {XX})^4'''.format(**fmt)
   
         print(expression)
                                
@@ -88,14 +89,16 @@ class CustomForce(mm.CustomExternalForce):
             # y parabola
             #if cls.yPotential:
             value += cls.bb[j] * (y - cls.YY[j])**4
-            # x gradient
+            # x gradient/linear
             #if cls.xPotential:
-            value += cls.aa[j] * x + cls.XX[j]
+            #value += cls.aa[j] * x + cls.XX[j]
+            value += cls.bb[j] * (x - cls.XX[j])**4
                 
         return value
 
     @classmethod
-    def plot(cls, ax=None, minx=-1.5, maxx=3.0, miny=0.0, maxy=2, **kwargs):
+    #def plot(cls, ax=None, minx=-1.5, maxx=3.0, miny=0.0, maxy=2, **kwargs):
+    def plot(cls, ax=None, minx=-10, maxx=10.0, miny=-10.0, maxy=10, **kwargs):
         "Plot the potential"
         grid_width = max(maxx-minx, maxy-miny) / 200.0
         ax = kwargs.pop('ax', None)
@@ -160,20 +163,25 @@ def runBD(
       paramDict[key] = auxParams[key]
       print("Adding %s="%(key) , auxParams[key])
     
-  # Choose starting conformations uniform on the grid between (-1.5, -0.2) and (1.2, 2)
-  # domain unuts [nm?] --> [mm] (1e9) 
-  # TODO: define size of domain 
-  # 1600 um  x 1600 um <--> 1.6 mm 
-  # for mueller potential 
-  #startingPositions = (np.random.rand(nParticles, 3) * np.array([2.7, 1.8, 1])) + np.array([-1.5, -0.2, 0])
+  # place particles 
+  # TODO: start w preequilibrated box or get cells from expt 
   nParticles = paramDict["nParticles"] 
-  startingPositions = (np.random.rand(nParticles, 3) * np.array([10,10,0]) + np.array([-10,0,0]))  #
-  #)startingPositions[:,1] = 2.
+  #dist = 10
+  #startingPositions = (np.random.rand(nParticles, 3) * np.array([dist,dist,0]) + np.array([-dist/2,-dist/2.,0]))  #
+  iCrowder = 0
+  #startingPositions[iCrowder,:]=0.
+
+  import lattice 
+  crowderPos = np.array([0,0,0.]) 
+  cellCoords = lattice.GenerateLattice(crowderPos, (nParticles - 1) ) 
+  startingPositions = np.zeros([nParticles,3])
+  startingPositions[iCrowder,:] = crowderPos
+  startingPositions[1:,:] = cellCoords
+
+
   startingPositions[:,2] = 0.
   ###############################################################################
   print("WARNING: taking over the first particle in order to make it a crowder; generalize later")
-  iCrowder = 0
-  startingPositions[iCrowder,:]=0.
   
   
   system = mm.System()
@@ -223,10 +231,11 @@ def runBD(
   for i in range(nParticles):
     if i != iCrowder:
       sigma = repulsiveScale
-      delta = 0
+      delta = 0  # no attraction with other particles of same type 
     else:
-      sigma = repulsiveScale * 10
-      delta = 5
+      sigma = repulsiveScale * 10 # verified this is working
+      #delta = 50
+      delta = 0           
     nonbond.addParticle([sigma,delta])
 
   
@@ -275,7 +284,12 @@ def runBD(
       # plot 
       if display: 
         #plt.scatter(x[:,0], x[:,1], edgecolor='none', facecolor='k')
-        plt.scatter(x[1:5,0], x[1:5,1], edgecolor='none', facecolor='k')
+        if i==0:
+            facecolor ='r'
+        else:
+            facecolor = 'k'
+        plt.scatter(x[0,0], x[0,1], edgecolor='none', facecolor='b')
+        plt.scatter(x[1:,0], x[1:,1], edgecolor='none', facecolor=facecolor)
   
       
       

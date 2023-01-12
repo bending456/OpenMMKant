@@ -500,9 +500,9 @@ def PDBgenNoPBC(PDBfileName,
           x,y,z = startingPositions[i,:]
 
         # make sure num sig. figs is correct for pdb
-        x = format(x,'6.3f') # any changest to this need to be reflected in spacing below 
-        y = format(y,'6.3f')
-        z = format(z,'6.3f')
+        x = format(x,'8.3f') # any changest to this need to be reflected in spacing below 
+        y = format(y,'8.3f')
+        z = format(z,'8.3f')
         
         if numOfDeadCell == 0:
             if i < NoCell1:
@@ -528,15 +528,15 @@ def PDBgenNoPBC(PDBfileName,
                 name = 'BC'
 
         if i < 9:
-            structure.write("ATOM      "+str(int(i+1))+"  "+name+"   "+name+"     "    +str(int(i+1))+"      "+str(x)+"  "+str(y)+"  "+str(z)+"  1.00  0.00 \n")
+            structure.write("ATOM      "+str(int(i+1))+"  "+name+"   "+name+"     "    +str(int(i+1))+"    "+str(x)+""+str(y)+""+str(z)+"  1.00  0.00 \n")
         elif i >= 9 and i < 99:
-            structure.write("ATOM     "+ str(int(i+1))+"  "+name+"   "+name+  "    "   +str(int(i+1))+"      "+str(x)+"  "+str(y)+"  "+str(z)+"  1.00  0.00 \n")
+            structure.write("ATOM     "+ str(int(i+1))+"  "+name+"   "+name+  "    "   +str(int(i+1))+"    "+str(x)+""+str(y)+""+str(z)+"  1.00  0.00 \n")
         elif i >= 99 and i < 999:
-            structure.write("ATOM    "+  str(int(i+1))+"  "+name+"   "+name+    "   "  +str(int(i+1))+"      "+str(x)+"  "+str(y)+"  "+str(z)+"  1.00  0.00 \n")
+            structure.write("ATOM    "+  str(int(i+1))+"  "+name+"   "+name+    "   "  +str(int(i+1))+"    "+str(x)+""+str(y)+""+str(z)+"  1.00  0.00 \n")
         elif i >= 999 and i < 9999:
-            structure.write("ATOM   "+   str(int(i+1))+"  "+name+"   "+name+      "  " +str(int(i+1))+"      "+str(x)+"  "+str(y)+"  "+str(z)+"  1.00  0.00 \n")
+            structure.write("ATOM   "+   str(int(i+1))+"  "+name+"   "+name+      "  " +str(int(i+1))+"    "+str(x)+""+str(y)+""+str(z)+"  1.00  0.00 \n")
         elif i >= 9999:
-            structure.write("ATOM  "+    str(int(i+1))+"  "+name+"   "+name+        " "+str(int(i+1))+"      "+str(x)+"  "+str(y)+"  "+str(z)+"  1.00  0.00 \n")
+            structure.write("ATOM  "+    str(int(i+1))+"  "+name+"   "+name+        " "+str(int(i+1))+"    "+str(x)+""+str(y)+""+str(z)+"  1.00  0.00 \n")
             
     structure.write("ENDMDL")
     structure.close
