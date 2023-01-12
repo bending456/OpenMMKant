@@ -64,6 +64,13 @@ python3 tests/brown.py -yamlFile FILE.yaml -run
 - PBCs in Y direction should be added 
 - piecewise continuous functions? (this doesn't appear to be supported 
 
+
+## Fitting procedure
+I adjusted the nUpdates parameter to equal the number of frames taken by the microscope
+The framerate parameter is set to #/min 
+The distance units in the code are assumed to be [um]
+The fraction parameter was adjusted s.t. the MSD at the last frame was close to the expt value
+
 ###############################################
 ## Other examples (Deprecated for now) 
 Test case: 

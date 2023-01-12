@@ -123,7 +123,8 @@ class Params():
     paramDict = dict()
 
     paramDict["nParticles"] = 100  
-    paramDict["friction"] = ( 100 / picosecond ) / 0.0765 # rescaling to match exptl data PKH  
+    paramDict["friction"] = ( 50 / picosecond ) # rescaling to match exptl data PKH  
+    paramDict["friction"] = ( 50              ) # rescaling to match exptl data PKH  
     print(paramDict["friction"])
     paramDict["timestep"] = 10.0 * femtosecond# 1e-11 s --> * 100 --> 1e-9 [ns] 
                                 #    72 s --> &*100 --> 7200 [s] (2hrs)     
@@ -131,8 +132,9 @@ class Params():
     paramDict["xPotential"] = False
     paramDict["yPotential"] = False
     paramDict["xScale"]   = 100.   # scale for chemoattractant gradient 
+    paramDict["frameRate"]=   1.  # [1 min/update]
   
-    paramDict["trajOutName"]="test.pkl"
+    paramDict["outName"]="test"
 
     # system params (can probably leave these alone in most cases
     paramDict["nInteg"] = 100  # integration step per cycle
@@ -208,7 +210,6 @@ def runBD(
 
 
   # define external force acting on particle 
-  print("WARNING: custom force seems to be ignoring the z potential") 
   customforce = CustomForce(paramDict)
 
   for i in range(nParticles):
@@ -239,6 +240,7 @@ def runBD(
       delta = 0  # no attraction with other particles of same type 
     else:
       sigma = repulsiveScale * 10 # verified this is working
+      sigma = repulsiveScale * 1. # verified this is working
       #delta = 50
       delta = 0           
     nonbond.addParticle([sigma,delta])
@@ -260,9 +262,10 @@ def runBD(
   if display:
     CustomForce.plot(ax=plt.gca())
   
-  
   nUpdates = paramDict["nUpdates"]
-  ts = np.arange(nUpdates)/float(nUpdates) * 2*min_per_hour 
+  totTime = nUpdates *  paramDict["frameRate"]  # [1 min/update]
+
+  ts = np.arange(nUpdates)/float(nUpdates) * totTime             
   xs = np.reshape( np.zeros( nParticles*nUpdates ), [nParticles,nUpdates])
   ys = np.zeros_like(xs)
   
