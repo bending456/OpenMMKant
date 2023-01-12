@@ -19,22 +19,15 @@ def PlotMSD(
   ts - len(ts) = num frames from microscope (assuming 1/min) 
   msds - [um]  
   """
+  print(np.shape(ts))
+  print(ts[-1])
 
-  min_per_hour = 1
   # display rmsd
   display = False
   display = True
   if display:
-    # sim data 
-    #plt.plot(ts/min_per_hour,msds,label="Sim")
-    #plt.xlabel("t [hr]")
-    #plt.ylabel("MSD [um**2]")
-
     # exp data later 
-    #adjTime = 2/50. # not sure why 50 entries, assuming 2 hrs 
     adjTime = 1.
-    #texp = data[:,0]*adjTime
-    #msdexp=data[:,1]
     texp = ts*adjTime
     texp_=texp.reshape((-1, 1))
 
@@ -45,7 +38,9 @@ def PlotMSD(
 
     plt.plot(texp,msds  , label="exp")
     plt.plot(texp,msdfit, label="fit")
-    plt.title("D= %f"%D) 
+    plt.ylabel("MSD [um^2]")
+    plt.xlabel("time [min]")
+    plt.title("D= %f [um^2/min]"%D) 
     plt.legend(loc=0)
  
     # 1K ts --> 2hrs/7200s?  
