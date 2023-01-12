@@ -55,10 +55,14 @@ python3 tests/brown.py -yamlFile FILE.yaml -run
 
 ## Analysis
 - Trajectory files like test.pkl can be opened and analyzed using the notebook in ./test
+- code will also generate pdb/dcd files. These can be opened using vmd
+-- VMD: load test.pdb. Right click entry in GUI. Select Load Data Into Molecule. Select dcd
 
 
 ## TODO
-There is some kind of problem with the z-constraint. Compare brown.py z coordinates relative to openmuller.py in the tests directory 
+- RESOLVED There is some kind of problem with the z-constraint. Compare brown.py z coordinates relative to openmuller.py in the tests directory 
+- PBCs in Y direction should be added 
+- piecewise continuous functions? (this doesn't appear to be supported 
 
 ###############################################
 ## Other examples (Deprecated for now) 

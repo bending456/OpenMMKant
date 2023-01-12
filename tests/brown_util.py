@@ -7,6 +7,18 @@ def PlotStuff(
   ts,
   outName=None
   ):     
+  print("PLOTSTUFF has been renamed; use PlotMSD instead\n") 
+  PlotMSD(ts,msds,outName=outName)
+
+def PlotMSD(     
+  ts,
+  msds,
+  outName=None
+  ):     
+  """
+  ts - len(ts) = num frames from microscope (assuming 1/min) 
+  msds - [um]  
+  """
 
   min_per_hour = 1
   # display rmsd
@@ -19,7 +31,8 @@ def PlotStuff(
     #plt.ylabel("MSD [um**2]")
 
     # exp data later 
-    adjTime = 2/50. # not sure why 50 entries, assuming 2 hrs 
+    #adjTime = 2/50. # not sure why 50 entries, assuming 2 hrs 
+    adjTime = 1.
     #texp = data[:,0]*adjTime
     #msdexp=data[:,1]
     texp = ts*adjTime

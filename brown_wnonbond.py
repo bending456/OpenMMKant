@@ -34,6 +34,7 @@ class CustomForce(mm.CustomExternalForce):
     includes pure python evaluation of the potential energy surface so that
     you can do some plotting"""
     aa = [5e-3]       
+    bba= [1]   # power for x (1 - linear) 
     bb = [5e-3]
     XX = [0] # need to adjust this to the domain size 
     YY = [0]
@@ -64,13 +65,14 @@ class CustomForce(mm.CustomExternalForce):
           self.aa[j]=0.
              
         # add the terms for the X and Y
-        fmt = dict(aa=self.aa[j], XX=self.XX[j], bb=self.bb[j], YY=self.YY[j])
+        fmt = dict(
+                aa=self.aa[j], XX=self.XX[j], bb=self.bb[j], bba=self.bba[j], YY=self.YY[j])
 
         # y parabola 
         expression += '''+ {bb} * (y - {YY})^4'''.format(**fmt)
         # xExpression / gradient 
-        #expression += '''+ {aa} * x + {XX}'''.format(**fmt)
-        expression += '''+ {bb} * (x - {XX})^4'''.format(**fmt)
+        #expression += '''+ {aa} * (x - {XX})^4'''.format(**fmt)
+        expression += '''+ {aa} * (x - {XX})^{bba}  '''.format(**fmt)
   
         print(expression)
                                
@@ -90,9 +92,8 @@ class CustomForce(mm.CustomExternalForce):
             #if cls.yPotential:
             value += cls.bb[j] * (y - cls.YY[j])**4
             # x gradient/linear
-            #if cls.xPotential:
-            #value += cls.aa[j] * x + cls.XX[j]
-            value += cls.bb[j] * (x - cls.XX[j])**4
+            #value += cls.aa[j] * (x - cls.XX[j])**4
+            value += cls.aa[j] * (x - cls.XX[j])**cls.bba[j]
                 
         return value
 
@@ -108,7 +109,7 @@ class CustomForce(mm.CustomExternalForce):
         # the color scheme
         if ax is None:
             ax = plt
-        ax.contourf(xx, yy, V.clip(max=200), 40, **kwargs)
+        ax.contourf(xx, yy, V.clip(max=100), 40, **kwargs)
         ax.colorbar()
 
 
@@ -161,6 +162,9 @@ def runBD(
     paramDict = params.paramDict
     for key in auxParams.keys():
       paramDict[key] = auxParams[key]
+
+      if "trajOutName" in key:
+          raise RuntimeError(key+" is now deprecated. Use outName instead")
       print("Adding %s="%(key) , auxParams[key])
     
   # place particles 
@@ -188,9 +192,10 @@ def runBD(
 
   ## define outputs for coordinates
   import calculator as calc 
-  trajOutName="test"
-  pdbFileName = trajOutName+".pdb"
-  dcdFileName = trajOutName+".dcd"
+  trajOutPfx=paramDict["outName"]
+  trajOutName = trajOutPfx+".pkl"
+  pdbFileName = trajOutPfx+".pdb"
+  dcdFileName = trajOutPfx+".dcd"
   # define arbitrary pdb
   calc.genPDBWrapper(pdbFileName,nParticles,startingPositions)
   # add to openmm
@@ -307,7 +312,6 @@ def runBD(
 
   ar = [ts,xs,ys]
   import pickle as pkl
-  trajOutName = paramDict["trajOutName"]
   if trajOutName is not None:
     if "pkl" not in trajOutName:
       trajOutName+=".pkl"
