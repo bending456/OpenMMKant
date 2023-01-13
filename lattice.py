@@ -106,8 +106,7 @@ def GenerateRandomLattice(
   #print( np.shape(cellIdx) ) 
   
   cellCoords = latticePts[randomized,:]
-  print(cellCoords) 
-  #quit()
+  print(np.shape(cellCoords) )
   return cellCoords
 
 def GenerateCrowdedLattice(
