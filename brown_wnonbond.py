@@ -123,7 +123,7 @@ class Params():
     paramDict = dict()
 
     paramDict["nParticles"] = 100  
-    paramDict["nCrowders"] = 100  
+    paramDict["nCrowders"] = 2  
     paramDict["friction"] = ( 50 / picosecond ) # rescaling to match exptl data PKH  
     paramDict["friction"] = ( 50              ) # rescaling to match exptl data PKH  
     paramDict["timestep"] = 10.0 * femtosecond# 1e-11 s --> * 100 --> 1e-9 [ns] 
@@ -173,25 +173,21 @@ def runBD(
   # place particles 
   # TODO: start w preequilibrated box or get cells from expt 
   nParticles = paramDict["nParticles"] 
-  #dist = 10
-  #startingPositions = (np.random.rand(nParticles, 3) * np.array([dist,dist,0]) + np.array([-dist/2,-dist/2.,0]))  #
-  iCrowder = 0
-  #startingPositions[iCrowder,:]=0.
+  nCrowders = paramDict["nCrowders"] 
 
-  import lattice 
-  crowderPos = np.array([0,0,0.]) 
 
   print("NOT IMPLEMENTED FULLY")
-  lattice.GenerateCrowderLattice(16,dim=20)  # generate 16 crowders
+  crowderPos, cellPos = lattice.GenerateCrowderLattice(
+          16,nParticles,crowdedDim=20,outerDim=50)  # generate 16 crowders
 
-
-  cellCoords = lattice.GenerateRandomLattice(
-          crowderPos, crowderRad=paramDict["crowderRad"], 
-          dim = paramDict["dim"],           
-          nParticles=(nParticles - 1) ) 
-  startingPositions = np.zeros([nParticles,3])
-  startingPositions[iCrowder,:] = crowderPos
+  nTot = nParticles + nCrowders
+  startingPositions = np.zeros([nTot,3])
+  #startingPositions[iCrowder,:] = crowderPos
   startingPositions[1:,:] = cellCoords
+  v = np.concatenate(crowderPos,cellPos)
+  #print(np.shape(v))
+
+  ##quit()
 
 
   startingPositions[:,2] = 0.
