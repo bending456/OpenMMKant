@@ -432,7 +432,6 @@ def genCellCoord3D(Density1,               # resting cells in first compartment
                          'Compartment2': numP_Comp2,
                          'Dead': numP_DeadCell,
                          'BP' : numP_BC}
-    print(len(coord))
     return coord, marker, MigMarker, totalmarker, Cell_Constitution
 
 

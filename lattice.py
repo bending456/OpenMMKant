@@ -74,12 +74,13 @@ def GenerateRandomLattice(
     clashIdx = np.argwhere(minDistSqd <= crowderRad**2) 
     #clashIdx = np.ndarray.flatten(clashIdx)
     #print(clashIdx)
-    allClashes.append(clashIdx)
+    if len(clashIdx)>0:
+      allClashes.append(clashIdx)
 
   # remove dupes 
   allClashes = np.asarray(allClashes)
-  allClashes = np.unique(allClashes)
   allClashes = np.ndarray.flatten( allClashes) 
+  allClashes = np.unique(allClashes)
 
   # remove conflicting entries 
   cellIdx = np.delete(latticeIdxs,allClashes) 
@@ -106,13 +107,12 @@ def GenerateRandomLattice(
   #print( np.shape(cellIdx) ) 
   
   cellCoords = latticePts[randomized,:]
-  print(np.shape(cellCoords) )
   return cellCoords
 
 def GenerateCrowdedLattice(
     nCrowders, 
     nCells,
-    crowdedDim=20,
+    crowdedDim=30,
     outerDim = 50):
 
   """
@@ -122,6 +122,7 @@ def GenerateCrowdedLattice(
     nCrowders, 
     dim=crowdedDim)
 
+  print(outerDim) 
   allCoords = GenerateRandomLattice( 
     crowderPosns = crowderPos, # where crowder is located 
     crowderRad = 10.,

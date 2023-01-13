@@ -257,7 +257,6 @@ def runBD(
   simulation = Simulation(pdb.topology, system,integrator) 
   #context = mm.Context(system, integrator)
   
-  print(np.shape(startingPositions))
   simulation.context.setPositions(startingPositions)
   simulation.context.setVelocitiesToTemperature(paramDict["temperature"])
   #context.setPositions(startingPositions)
