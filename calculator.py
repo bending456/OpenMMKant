@@ -432,7 +432,6 @@ def genCellCoord3D(Density1,               # resting cells in first compartment
                          'Compartment2': numP_Comp2,
                          'Dead': numP_DeadCell,
                          'BP' : numP_BC}
-    print(len(coord))
     return coord, marker, MigMarker, totalmarker, Cell_Constitution
 
 
@@ -872,32 +871,3 @@ def testRunner(filename):
     
     return
 
-############################################################################
-###                          Archives                                    ###
-############################################################################
-'''
-def calcStateVariable(numberOfCells,
-                      marker,
-                      total_conc_at_cell,
-                      stateVarOld):
-    
-    kf1 = np.random.normal(2e-3,1e-1)
-    kf2 = np.random.normal(1e-3,5e-2)
-    kb1 = np.random.normal(2e-4,1e-2)
-    kb2 = np.random.normal(1e-4,5e-3)
-    forward = np.asarray(marker)
-    backward = np.asarray(marker)
-    forward[forward=='resting'] = kf1
-    forward[forward=='activated'] = kf2
-    backward[backward=='resting'] = kb1
-    backward[backward=='activated'] = kb2
-    
-    forward = list(map(float,forward))
-    backward = list(map(float,backward))
-    
-    sig = 1/(1+(0.5/total_conc_at_cell)**3)
-
-    stateVarNew = stateVarOld + 0.002*(-1*stateVarOld*sig*forward + stateVarOld*backward)  
-          
-    return stateVarNew 
-'''

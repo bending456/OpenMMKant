@@ -125,7 +125,7 @@ class Params():
     paramDict = dict()
 
     paramDict["nParticles"] = 100  
-    paramDict["nCrowders"] = 100  
+    paramDict["nCrowders"] = 16 
     paramDict["friction"] = ( 50 / picosecond ) # rescaling to match exptl data PKH  
     paramDict["friction"] = ( 50              ) # rescaling to match exptl data PKH  
     paramDict["timestep"] = 10.0 * femtosecond# 1e-11 s --> * 100 --> 1e-9 [ns] 
@@ -140,6 +140,7 @@ class Params():
 
     # system params (can probably leave these alone in most cases
     paramDict["dim"]    = 200  # [um] dimensions of domain 
+    paramDict["crowderDim"]    = 50   # [um] dimensions of domain containing crowders (square)  
     paramDict["nInteg"] = 100  # integration step per cycle
     paramDict["mass"] = 1.0 * dalton
     paramDict["temperature"] = 750 * kelvin
@@ -175,32 +176,31 @@ def runBD(
   # place particles 
   # TODO: start w preequilibrated box or get cells from expt 
   nParticles = paramDict["nParticles"] 
-  #dist = 10
-  #startingPositions = (np.random.rand(nParticles, 3) * np.array([dist,dist,0]) + np.array([-dist/2,-dist/2.,0]))  #
-  iCrowder = 0
-  #startingPositions[iCrowder,:]=0.
+  nCrowders = paramDict["nCrowders"] 
+
 
   import lattice 
-  print("CROWDER POSITION") 
-  crowderPos = np.array([0,0,0.]) 
+  crowderPos, cellPos = lattice.GenerateCrowdedLattice(
+          nCrowders,nParticles,
+          crowdedDim=paramDict["crowderDim"], # [um] dimensions of domain containing crowders (square)  
+          outerDim=paramDict["dim"]
+          )  # generate 16 crowders
 
-  print("NOT IMPLEMENTED FULLY")
-  lattice.GenerateCrowderLattice(16,dim=20)  # generate 16 crowders
+  newCrowderPos = np.shape(crowderPos)[0]
+  if (newCrowderPos != nCrowders):
+    print("WARNING: increasing nCrowders to the nearest 'square-rootable' value")
+    nCrowders = newCrowderPos 
 
+  nTot = nParticles + nCrowders
+  startingPositions = np.concatenate((crowderPos,cellPos))
+  #print(np.shape(crowderPos))
+  #print(np.shape(cellPos))
+  #print(np.shape(startingPositions))
 
-  cellCoords = lattice.GenerateRandomLattice(
-          crowderPos, crowderRad=paramDict["crowderRad"], 
-          dim = paramDict["dim"],           
-          nParticles=(nParticles - 1) ) 
-  startingPositions = np.zeros([nParticles,3])
-  startingPositions[iCrowder,:] = crowderPos
-  startingPositions[1:,:] = cellCoords
-
-
+  # align everything to xy plane 
   startingPositions[:,2] = 0.
   ###############################################################################
-  print("WARNING: taking over the first particle in order to make it a crowder; generalize later")
-  
+
   
   system = mm.System()
 
@@ -211,7 +211,7 @@ def runBD(
   pdbFileName = trajOutPfx+".pdb"
   dcdFileName = trajOutPfx+".dcd"
   # define arbitrary pdb
-  calc.genPDBWrapper(pdbFileName,nParticles,startingPositions)
+  calc.genPDBWrapper(pdbFileName,nTot,startingPositions)
   # add to openmm
   pdb = PDBFile(pdbFileName)
 
@@ -220,17 +220,15 @@ def runBD(
   dcdReporter = DCDReporter(dcdFileName, dumpSize)
 
 
-
   # define external force acting on particle 
   customforce = CustomForce(paramDict)
 
-  for i in range(nParticles):
-      if i != iCrowder:
-        system.addParticle(paramDict["mass"])
-        customforce.addParticle(i, [])
-      else:
-        system.addParticle(paramDict["mass"]*1e4)
-        # PKH - i don't think I need a custom force for this one 
+  for i in range(nCrowders):      
+      system.addParticle(paramDict["mass"]*1e4)
+      # PKH - i don't think I need a custom force for this one 
+  for i in range(nParticles):      
+      system.addParticle(paramDict["mass"])
+      customforce.addParticle(i, [])
   
   if paramDict["xPotential"] or paramDict["yPotential"]: 
     print("Adding force") 
@@ -246,17 +244,16 @@ def runBD(
 
   # TODO: might need to integrate into loop above, when particles are added to system
   repulsiveScale = 0.1
-  for i in range(nParticles):
-    if i != iCrowder:
-      sigma = repulsiveScale
-      delta = 0  # no attraction with other particles of same type 
-    else:
-      sigma = paramDict["crowderRad"]
-      #delta = 50
-      delta = 0           
+  for i in range(nCrowders):      
+    sigma = paramDict["crowderRad"]
+    #delta = 50
+    delta = 0           
+    nonbond.addParticle([sigma,delta])
+  for i in range(nParticles):      
+    sigma = repulsiveScale
+    delta = 0  # no attraction with other particles of same type 
     nonbond.addParticle([sigma,delta])
 
-  
   #integrator = mm.LangevinIntegrator(temperature, friction, timestep)
   integrator = mm.BrownianIntegrator(paramDict["temperature"], paramDict["friction"], paramDict["timestep"])
   simulation = Simulation(pdb.topology, system,integrator) 
@@ -277,7 +274,7 @@ def runBD(
   totTime = nUpdates *  paramDict["frameRate"]  # [1 min/update]
 
   ts = np.arange(nUpdates)/float(nUpdates) * totTime             
-  xs = np.reshape( np.zeros( nParticles*nUpdates ), [nParticles,nUpdates])
+  xs = np.reshape( np.zeros( nTot*nUpdates ), [nTot,nUpdates])
   ys = np.zeros_like(xs)
   
   #msds = np.zeros( nUpdates ) 
