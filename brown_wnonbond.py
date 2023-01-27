@@ -72,6 +72,8 @@ class CustomForce(mm.CustomExternalForce):
         expression += '''+ {bb} * (y - {YY})^4'''.format(**fmt)
         # xExpression / gradient 
         #expression += '''+ {aa} * (x - {XX})^4'''.format(**fmt)
+        # my potential for the x direction
+        # xPotential = aa*(xParticle-x0)      <--- if bba=1
         expression += '''+ {aa} * (x - {XX})^{bba}  '''.format(**fmt)
   
         print(expression)
@@ -179,6 +181,7 @@ def runBD(
   #startingPositions[iCrowder,:]=0.
 
   import lattice 
+  print("CROWDER POSITION") 
   crowderPos = np.array([0,0,0.]) 
 
   print("NOT IMPLEMENTED FULLY")
