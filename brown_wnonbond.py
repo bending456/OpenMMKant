@@ -10,15 +10,14 @@ take the meaning of those numbers with a grain of salt.
 
 from simtk.unit import kelvin, picosecond, femtosecond, nanometer, dalton
 # if kant installastion
-import simtk.openmm as mm
+#import simtk.openmm as mm
+#from simtk.openmm.app import *                    
 # otherwise 
-#import openmm as mm
-from simtk.openmm import *
-from simtk.openmm.app import *
+import openmm as mm
+from openmm.app import * # PDBFile, DCDReporter
 
 import matplotlib.pylab as plt
 import numpy as np
-from sklearn.linear_model import LinearRegression
 
 min_per_hour = 60  #
 # TODO put into param object
@@ -38,6 +37,7 @@ class CustomForce(mm.CustomExternalForce):
     bb = [5e-3]
     XX = [0] # need to adjust this to the domain size 
     YY = [0]
+
 
     def __init__(self,
         paramDict 
@@ -124,8 +124,8 @@ class Params():
   def __init__(self):
     paramDict = dict()
 
-    paramDict["nParticles"] = 100  
-    paramDict["nCrowders"] = 16 
+    paramDict["nParticles"] = 10  
+    paramDict["nCrowders"] = 1  
     paramDict["friction"] = ( 50 / picosecond ) # rescaling to match exptl data PKH  
     paramDict["friction"] = ( 50              ) # rescaling to match exptl data PKH  
     paramDict["timestep"] = 10.0 * femtosecond# 1e-11 s --> * 100 --> 1e-9 [ns] 
@@ -144,6 +144,7 @@ class Params():
     paramDict["nInteg"] = 100  # integration step per cycle
     paramDict["mass"] = 1.0 * dalton
     paramDict["temperature"] = 750 * kelvin
+    paramDict['dumpSize'] = 100 
 
     # store all values 
     self.paramDict = paramDict
@@ -157,6 +158,8 @@ def runBD(
   display=False,
   yamlFile=None
   ): 
+  paramDict = params.paramDict
+
   if yamlFile is None:
     print("YAML file was not provided - using default parameters.") 
    
@@ -165,7 +168,6 @@ def runBD(
     with open(yamlFile, 'r') as file:
       auxParams = yaml.safe_load(file)
     
-    paramDict = params.paramDict
     for key in auxParams.keys():
       paramDict[key] = auxParams[key]
 
@@ -184,7 +186,7 @@ def runBD(
           nCrowders,nParticles,
           crowdedDim=paramDict["crowderDim"], # [um] dimensions of domain containing crowders (square)  
           outerDim=paramDict["dim"]
-          )  # generate 16 crowders
+          )  # generate crowders
 
   newCrowderPos = np.shape(crowderPos)[0]
   if (newCrowderPos != nCrowders):
@@ -213,10 +215,10 @@ def runBD(
   # define arbitrary pdb
   calc.genPDBWrapper(pdbFileName,nTot,startingPositions)
   # add to openmm
-  pdb = PDBFile(pdbFileName)
+  pdb = PDBFile(pdbFileName) 
 
   # Configure dcd                    
-  dumpSize = 100 
+  dumpSize = paramDict['dumpSize'] # 100 
   dcdReporter = DCDReporter(dcdFileName, dumpSize)
 
 
@@ -235,7 +237,7 @@ def runBD(
     system.addForce(customforce) # <-- PKH should this be added earlier to keep things in z
 
   # define nonbond force between particles
-  nonbond = CustomNonbondedForce("(sigma/r)^12-delta*(sigma/r)^6; sigma=0.5*(sigma1+sigma2); delta=0.5*(delta1+delta2)") # TODO: don't we use geometric avg for this ?
+  nonbond = mm.CustomNonbondedForce("(sigma/r)^12-delta*(sigma/r)^6; sigma=0.5*(sigma1+sigma2); delta=0.5*(delta1+delta2)") # TODO: don't we use geometric avg for this ?
   nonbond.addPerParticleParameter("sigma")
   nonbond.addPerParticleParameter("delta")  
   nonbond.setCutoffDistance(9)
@@ -257,12 +259,9 @@ def runBD(
   #integrator = mm.LangevinIntegrator(temperature, friction, timestep)
   integrator = mm.BrownianIntegrator(paramDict["temperature"], paramDict["friction"], paramDict["timestep"])
   simulation = Simulation(pdb.topology, system,integrator) 
-  #context = mm.Context(system, integrator)
   
   simulation.context.setPositions(startingPositions)
   simulation.context.setVelocitiesToTemperature(paramDict["temperature"])
-  #context.setPositions(startingPositions)
-  #context.setVelocitiesToTemperature(paramDict["temperature"])
 
   # dcd writing
   simulation.reporters.append(dcdReporter)
@@ -277,11 +276,11 @@ def runBD(
   xs = np.reshape( np.zeros( nTot*nUpdates ), [nTot,nUpdates])
   ys = np.zeros_like(xs)
   
-  #msds = np.zeros( nUpdates ) 
-  #x0s = context.getState(getPositions=True).getPositions(asNumpy=True).value_in_unit(nanometer)
 
   # minimize to reconcile bad contacts
-  #simulation.minimizeEnergy() # don't do this, since it will move the crowders too 
+  minimize = False
+  if minimize:
+    simulation.minimizeEnergy() # don't do this, since it will move the crowders too 
 
   #
   # START ITERATOR 

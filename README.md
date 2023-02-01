@@ -73,6 +73,9 @@ The fraction parameter was adjusted s.t. the MSD at the last frame was close to 
 
 ###############################################
 ## Other examples (Deprecated for now) 
+
+WARNING: operator.py is now in Archive. I was getting a strange error about tuples that I nartrowed down to this script. 
+
 Test case: 
 ```
 $ python3 operator.py

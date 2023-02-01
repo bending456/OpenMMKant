@@ -8,7 +8,7 @@ from simtk.openmm import *
 from simtk.openmm.app import *
 from sys import stdout
 import numpy as np
-from FeedInplugin import FeedInForce
+#from FeedInplugin import FeedInForce
 from random import seed
 from random import randint
 import concentration as conc
