@@ -1,3 +1,4 @@
+nCrowders: 1   
 nParticles: 20  # adjust me to mirror exptl data 
 nUpdates: 320 # to match with exptl number of frames 
 friction:  60 # [1/ps] (time is in no relation to expt, treat as unitless here)

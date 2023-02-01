@@ -441,13 +441,14 @@ def genCellCoord3D(Density1,               # resting cells in first compartment
 
 def genPDBWrapper(
         pdbFileName,
-        nCells,
+        nCellsType1,   # generally the diffusing cells 
+        nCellsType2=0, # generally the crowders 
         startingPositions=None):
     """
     This is a wrapper for Ben's PDB writer, siunce I needed something simple.
     Later I can revise his code to accept coordinates; currently they're randomized 
     """
-    PDBgenNoPBC(pdbFileName,nCells,0,0,0,"None",startingPositions=startingPositions)
+    PDBgenNoPBC(pdbFileName,nCellsType1,nCellsType2,0,0,"None",startingPositions=startingPositions)
     
 
 def PDBgenNoPBC(PDBfileName,

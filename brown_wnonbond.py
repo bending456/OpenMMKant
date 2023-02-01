@@ -213,7 +213,8 @@ def runBD(
   pdbFileName = trajOutPfx+".pdb"
   dcdFileName = trajOutPfx+".dcd"
   # define arbitrary pdb
-  calc.genPDBWrapper(pdbFileName,nTot,startingPositions)
+  calc.genPDBWrapper(pdbFileName,nParticles,nCrowders,startingPositions)
+  #calc.genPDBWrapper(pdbFileName,nTot,startingPositions)
   # add to openmm
   pdb = PDBFile(pdbFileName) 
 
