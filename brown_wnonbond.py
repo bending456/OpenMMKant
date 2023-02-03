@@ -10,11 +10,11 @@ take the meaning of those numbers with a grain of salt.
 
 from simtk.unit import kelvin, picosecond, femtosecond, nanometer, dalton
 # if kant installastion
-#import simtk.openmm as mm
-#from simtk.openmm.app import *                    
+import simtk.openmm as mm
+from simtk.openmm.app import *                    
 # otherwise 
-import openmm as mm
-from openmm.app import * # PDBFile, DCDReporter
+#import openmm as mm
+#from openmm.app import * # PDBFile, DCDReporter
 
 import matplotlib.pylab as plt
 import numpy as np
