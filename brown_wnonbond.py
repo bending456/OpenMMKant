@@ -360,7 +360,7 @@ Purpose:
  
 Usage:
 """
-  msg+="  %s -validation" % (scriptName)
+  msg+="  %s -validation/-printVar" % (scriptName)
   msg+="""
   
  
