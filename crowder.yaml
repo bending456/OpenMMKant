@@ -1,6 +1,7 @@
 nParticles: 20  # adjust me to mirror exptl data 
 nCrowders: 16 
-crowderDim: 50
+dim: 200        # [um] dimensions of domain
+crowderDim: 199 
 nUpdates: 3200 # to match with exptl number of frames 
 friction:  60 # [1/ps] (time is in no relation to expt, treat as unitless here)
 xPotential: False   # [True/False]

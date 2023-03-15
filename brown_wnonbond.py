@@ -20,11 +20,6 @@ import matplotlib.pylab as plt
 import numpy as np
 
 min_per_hour = 60  #
-# TODO put into param object
-cAttr      = 1.     # conc. of chemoattractant 
-diamCell   = 1e-2   # [mm]
-diamOccl   = 1e-1   # [mm]
-lenDom     = 1e0    # [mm]
 
 
 # https://demonstrations.wolfram.com/TrajectoriesOnTheMullerBrownPotentialEnergySurface/#more
@@ -49,7 +44,7 @@ class CustomForce(mm.CustomExternalForce):
  
         # chemoattractant gradient ; assume RHS is maximal ATP
         # c(x=len) = cAttr * ac *x ---> ac = c/lenDom 
-        ac    = cAttr/lenDom
+        ac    = pD["cAttr"]/pD["lenDom"]
         self.aa[0] = -1 * pD["xScale"] * ac # make attractive for U = -xScale * c       
          
 
@@ -135,11 +130,18 @@ class Params():
     paramDict["yPotential"] = False
     paramDict["xScale"]   = 100.   # scale for chemoattractant gradient 
     paramDict["frameRate"]=   1.  # [1 min/update]
+    paramDict["cellRad"] = 0.1
     paramDict["crowderRad"]= 10.  # [um]
     paramDict["outName"]="test"
 
+    print("WARNING get dimensions consistent ")
+
     # system params (can probably leave these alone in most cases
-    paramDict["dim"]    = 200  # [um] dimensions of domain 
+    paramDict["cAttr"]      = 1.     # conc. of chemoattractant 
+    diamCell   = 1e-2   # [mm]
+    diamOccl   = 1e-1   # [mm] --> needs to be used for nonbond parameters TODO
+    paramDict["lenDom"]     = 1e0    # [mm] --> convert into micron 
+    paramDict["domainDim"]    = 200  # [um] dimensions of domain 
     paramDict["crowderDim"]    = 50   # [um] dimensions of domain containing crowders (square)  
     paramDict["nInteg"] = 100  # integration step per cycle
     paramDict["mass"] = 1.0 * dalton
@@ -185,7 +187,7 @@ def runBD(
   crowderPos, cellPos = lattice.GenerateCrowdedLattice(
           nCrowders,nParticles,
           crowdedDim=paramDict["crowderDim"], # [um] dimensions of domain containing crowders (square)  
-          outerDim=paramDict["dim"]
+          outerDim=paramDict["domainDim"]
           )  # generate crowders
 
   newCrowderPos = np.shape(crowderPos)[0]
@@ -246,14 +248,13 @@ def runBD(
   system.addForce(nonbond)
 
   # TODO: might need to integrate into loop above, when particles are added to system
-  repulsiveScale = 0.1
   for i in range(nCrowders):      
     sigma = paramDict["crowderRad"]
     #delta = 50
     delta = 0           
     nonbond.addParticle([sigma,delta])
   for i in range(nParticles):      
-    sigma = repulsiveScale
+    sigma = paramDict["cellRad"] 
     delta = 0  # no attraction with other particles of same type 
     nonbond.addParticle([sigma,delta])
 
@@ -337,6 +338,17 @@ def runBD(
 #!/usr/bin/env python
 import sys
 
+# prints variables availasble for yaml
+def printVariables():
+    print("These variables can be added to the yaml file")
+    params = Params()
+
+    paramDict = params.paramDict
+    for key, value in paramDict.items():
+        print("key/val ",key,value) 
+
+
+
 
 #
 # Message printed when program run without arguments 
@@ -396,6 +408,10 @@ if __name__ == "__main__":
 
     if(arg=="-run"):
       runBD(display=display,yamlFile=yamlFile)
+      quit()
+
+    if(arg=="-printVar"):
+      printVariables()
       quit()
   
 
