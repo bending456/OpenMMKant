@@ -1,4 +1,12 @@
-Code for running langevin particle simulations
+#
+#  Note: this code has been superceded by git@github.com:huskeypm/cellmigration.git
+#
+
+
+###
+###  Xode is no longer used 
+###
+Code e for running langevin particle simulations
 
 
 # Installation

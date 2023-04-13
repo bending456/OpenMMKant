@@ -134,7 +134,7 @@ class Params():
     paramDict["crowderRad"]= 10.  # [um]
     paramDict["outName"]="test"
 
-    print("WARNING get dimensions consistent ")
+    print("WARNING get unit dimensions consistent ")
 
     # system params (can probably leave these alone in most cases
     paramDict["cAttr"]      = 1.     # conc. of chemoattractant 
